@@ -1,0 +1,184 @@
+# Local development
+
+## Prerequisites
+
+- Node.js `>=20.9.0`
+- npm
+- Internet access for live football data
+- Optional OpenAI API key and API credits
+
+## Installation
+
+```bash
+npm install
+```
+
+Create the local environment file:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+macOS/Linux:
+
+```bash
+cp .env.example .env.local
+```
+
+Start development:
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+## AI-disabled development
+
+No environment variables are required for the football features.
+
+Use:
+
+```dotenv
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-5.4-mini
+AI_ACCESS_CODE=
+```
+
+In development, an absent `AI_ACCESS_CODE` does not block the endpoint, but an absent `OPENAI_API_KEY` returns HTTP 503. In production, an absent access code disables AI endpoints before an OpenAI call can occur.
+
+## AI-enabled development
+
+```dotenv
+OPENAI_API_KEY=your-server-side-api-key
+OPENAI_MODEL=gpt-5.4-mini
+AI_ACCESS_CODE=a-long-private-shared-code
+```
+
+Restart the development server after changing `.env.local`.
+
+The OpenAI API is billed separately from ChatGPT subscriptions and Vercel hosting.
+
+## Repository structure
+
+```text
+app/
+  api/                    Server API routes
+  groups/[group]/         Group page
+  matches/[matchId]/      Match center
+  players/[playerId]/     Player details
+  teams/[teamId]/         Team details
+  compare/                Team comparison
+  favorites/              Favorites and notification settings
+  predictions/            Prediction history
+  statistics/             Player leaderboards
+components/               Shared server and client UI
+docs/                     Project documentation
+lib/
+  liveData.ts             ESPN integration and domain mapping
+  security.ts             Access-code verification and rate limits
+  teamComparison.ts       Comparison view model
+  favorites.ts            Favorite-team browser persistence
+  predictionTypes.ts      Forecast browser persistence
+  useAIAccessCode.ts      Session access-code hook
+```
+
+## Development workflow
+
+1. Start `npm run dev`.
+2. Make a focused change.
+3. Test the affected route at desktop and phone widths.
+4. Check empty, loading, upstream-failure, and long-name states.
+5. Run:
+
+```bash
+npm run check
+```
+
+6. Deploy only after lint, type checking, and production build pass.
+
+## Data integration conventions
+
+Keep provider-specific payload shapes inside `lib/liveData.ts`. Pages and components should consume application types such as `LiveMatch`, `LiveStanding`, and `PlayerTournamentStat`.
+
+When adding a provider field:
+
+1. Add the minimal provider payload type.
+2. Map it to an application-owned type.
+3. Handle missing fields.
+4. Choose a cache interval appropriate to how quickly it changes.
+5. Preserve the 8-second timeout or document why a different timeout is needed.
+6. Add an empty state in the consuming UI.
+
+Do not fetch the OpenAI API directly from a client component.
+
+## Adding a page
+
+Prefer a Server Component for data loading:
+
+```tsx
+export const dynamic = 'force-dynamic';
+
+export default async function ExamplePage() {
+  const data = await loadData();
+  return <main>{/* render data */}</main>;
+}
+```
+
+Add `'use client'` only when the component needs browser APIs, event handlers, or React client state.
+
+Reuse `SiteNav` and the existing page container spacing. Test at 375px width. Wide data should scroll inside a bounded panel, not widen the document.
+
+## Adding an API route
+
+For public endpoints:
+
+- Validate path, query, header, and JSON inputs.
+- Return JSON errors with appropriate HTTP status codes.
+- Apply `clientIdentifier()` and `rateLimit()` when abuse could create cost or load.
+- Add `Retry-After` to HTTP 429 responses.
+- Keep secrets server-side.
+- Return a stable response shape.
+- Document the endpoint in [API.md](API.md).
+
+## Quality commands
+
+```bash
+npm run lint
+npm run typecheck
+npm run build
+npm run check
+```
+
+There is not yet an automated test suite. High-value additions would be:
+
+- Unit tests for ESPN mapping and probability normalization
+- API route tests for validation, authorization, and rate limits
+- Component tests for favorite/prediction storage
+- Playwright tests for dashboard, match, favorites, and mobile layouts
+
+## Common local issues
+
+### Port 3000 is already in use
+
+Start on another port:
+
+```bash
+npm run dev -- -p 3001
+```
+
+### Football panels are empty
+
+Confirm internet access and open the ESPN endpoints from the same machine. The integration returns empty results instead of crashing when a request fails.
+
+### Environment changes have no effect
+
+Stop and restart the Next.js process. Do not prefix a browser-visible variable with `NEXT_PUBLIC_` unless it is intentionally public.
+
+### Stale UI
+
+Development hot reload and the 15-second live refresh can overlap. Reload once manually after changing server-side data mapping.
+
+### TypeScript build artifacts appear
+
+`tsconfig.tsbuildinfo` is generated by incremental TypeScript and is excluded by the repository ignore rules.
