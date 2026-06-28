@@ -79,13 +79,15 @@ Important behavior:
 2. Open **Favorites**.
 3. Select **Enable notifications**.
 4. Allow notification permission in the browser prompt.
-5. Keep the website open.
+5. Confirm that the “World Cup alerts enabled” test notification appears.
 
-The application checks scores every 30 seconds and can alert on kickoff, a score increase, and full time for favorite teams.
+The background service checks scores approximately every minute and can alert on kickoff, a score increase, and full time for favorite teams. The service worker can receive alerts after the site is closed.
 
-These are foreground browser notifications. They do not work reliably after the browser or site is closed. Mobile browser support and background-tab timing vary.
+On iPhone and iPad, first add the site to the Home Screen, open it from the installed icon, and then enable notifications. Browser/operating-system power saving and upstream feed timing can delay delivery.
 
 If permission is blocked, use the browser’s site settings to reset notification permission and try again.
+
+Select **Disable notifications** to remove the current browser subscription from the service.
 
 ## Team comparison
 

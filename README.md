@@ -16,7 +16,7 @@ A responsive FIFA World Cup 2026 tracker built with Next.js. It presents near-re
 - Tournament leaderboards and player profile pages
 - ESPN headshots with a TheSportsDB image fallback
 - Device-local favorite teams
-- Foreground browser notifications for kickoff, goals, and full time
+- Background Web Push notifications for kickoff, goals, and full time
 - Side-by-side team comparison
 - Optional OpenAI match forecasts and team analysis
 - Device-local prediction history and accuracy tracking
@@ -33,10 +33,11 @@ A responsive FIFA World Cup 2026 tracker built with Next.js. It presents near-re
 | Football data | ESPN soccer JSON endpoints |
 | Image fallback | TheSportsDB |
 | Optional AI | OpenAI Responses API |
+| Push storage/scheduler | Supabase Postgres and Cron |
 | Hosting | Vercel |
 | Persistence | Browser `localStorage` and `sessionStorage` |
 
-The application does not currently use a database or authentication service.
+Supabase stores anonymous Web Push subscriptions and notification delivery state. Favorites and predictions remain device-local, and the application does not currently have user authentication.
 
 ## Quick start
 
@@ -70,6 +71,12 @@ Football data works without environment variables. Leave `OPENAI_API_KEY` empty 
 | `OPENAI_API_KEY` | Only for AI | Server-side OpenAI API key |
 | `OPENAI_MODEL` | No | Model override; defaults to `gpt-5.4-mini` |
 | `AI_ACCESS_CODE` | Required for production AI | A separate shared password that protects paid AI endpoints |
+| `SUPABASE_URL` | For push | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | For push | Server-only database key |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | For push | Public Web Push application key |
+| `VAPID_PRIVATE_KEY` | For push | Server-only Web Push signing key |
+| `VAPID_SUBJECT` | For push | Contact URL or `mailto:` address |
+| `CRON_SECRET` | For push | Protects the scheduled delivery endpoint |
 
 Never expose `OPENAI_API_KEY` to browser code or commit `.env.local`. `AI_ACCESS_CODE` is not an API key and does not provide OpenAI credits.
 
@@ -110,7 +117,7 @@ Server-rendered pages request the current tournament feed through `lib/liveData.
 - Team profiles: 5 minutes
 - Fallback player images: 24 hours
 
-Open pages call `router.refresh()` every 15 seconds. Notifications compare a lightweight score snapshot every 30 seconds while the site remains open.
+Open pages call `router.refresh()` every 15 seconds. Supabase Cron invokes the protected push checker every minute; a service worker receives alerts even when the site is closed.
 
 This is near-real-time polling, not an official low-latency data stream. Provider updates, caching, network conditions, and browser throttling can introduce delay.
 
@@ -126,7 +133,8 @@ This is near-real-time polling, not an official low-latency data stream. Provide
 
 ## Current limitations
 
-- Notifications work only while the website is open; there is no service worker or push provider.
+- Push delivery can be delayed by the one-minute scheduler, upstream updates, or device power-saving policies.
+- On iPhone/iPad, Web Push requires adding the site to the Home Screen before enabling alerts.
 - Favorites and predictions are stored on one browser/device and are not synchronized.
 - AI features require separate OpenAI API billing and can be disabled independently.
 - Rate limiting is in process memory, so it is only a baseline safeguard on serverless hosting.

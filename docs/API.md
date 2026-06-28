@@ -20,6 +20,8 @@ The shared code must match `AI_ACCESS_CODE`. It protects OpenAI spend but is not
 | `POST /api/compare` | 5 requests/minute/IP |
 | `GET /api/live-snapshot` | 10 requests/minute/IP |
 | `GET /api/player-image` | 30 requests/minute/IP |
+| `POST /api/push/subscriptions` | 12 requests/minute/IP |
+| `DELETE /api/push/subscriptions` | 6 requests/minute/IP |
 
 Rate limits are held in process memory. They can reset when a serverless instance restarts and do not coordinate across instances.
 
@@ -215,6 +217,60 @@ curl -X POST \
 - `429` — Local rate limit or OpenAI quota/rate limit
 - `502` — OpenAI request or response validation failed
 - `503` — AI access or API key is not configured
+
+## `GET /api/push/public-key`
+
+Returns whether background notifications are configured and the public VAPID application key. The key is intentionally public.
+
+```json
+{
+  "configured": true,
+  "publicKey": "..."
+}
+```
+
+Returns HTTP 503 with `configured: false` until all push environment variables are available.
+
+## `POST /api/push/subscriptions`
+
+Creates or updates an anonymous browser Push API subscription and its favorite-team IDs.
+
+```json
+{
+  "subscription": {
+    "endpoint": "https://push-service.example/...",
+    "keys": {
+      "p256dh": "...",
+      "auth": "..."
+    }
+  },
+  "favoriteTeamIds": ["203", "467"]
+}
+```
+
+The endpoint must use HTTPS, key values must be base64url, and at most 48 numeric team IDs are stored. The Supabase service-role key is used only by the server route.
+
+## `DELETE /api/push/subscriptions`
+
+Deletes a browser subscription before the browser unsubscribes.
+
+```json
+{
+  "endpoint": "https://push-service.example/..."
+}
+```
+
+## `POST /api/push/check`
+
+Protected scheduler endpoint. It:
+
+1. Verifies `Authorization: Bearer <CRON_SECRET>`.
+2. loads current matches and previous Supabase state;
+3. claims unique kickoff, score, and full-time events;
+4. sends Web Push messages only to subscriptions following either team;
+5. removes expired subscriptions returning HTTP 404 or 410.
+
+This endpoint is for Supabase Cron, not browsers. It returns HTTP 401 without the exact cron secret.
 
 ## Error handling
 

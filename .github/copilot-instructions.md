@@ -13,7 +13,8 @@
 - Dynamic Server Components load near-real-time ESPN tournament data.
 - `lib/liveData.ts` owns all ESPN payload types, mapping, timeouts, and cache intervals.
 - Client components own browser-only interaction and storage.
-- Favorites and predictions use browser storage; there is no database or Supabase integration.
+- Favorites and predictions use browser storage.
+- Supabase stores anonymous Web Push subscriptions, match state, delivery deduplication, and runs the one-minute notification schedule.
 - TheSportsDB is used only as a fallback for missing player images.
 - OpenAI is optional and called only from server API routes.
 

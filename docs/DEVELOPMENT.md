@@ -43,6 +43,12 @@ Use:
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-5.4-mini
 AI_ACCESS_CODE=
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=
+CRON_SECRET=
 ```
 
 In development, an absent `AI_ACCESS_CODE` does not block the endpoint, but an absent `OPENAI_API_KEY` returns HTTP 503. In production, an absent access code disables AI endpoints before an OpenAI call can occur.
@@ -74,6 +80,7 @@ app/
   statistics/             Player leaderboards
 components/               Shared server and client UI
 docs/                     Project documentation
+public/sw.js               Background Web Push service worker
 lib/
   liveData.ts             ESPN integration and domain mapping
   security.ts             Access-code verification and rate limits
@@ -81,6 +88,11 @@ lib/
   favorites.ts            Favorite-team browser persistence
   predictionTypes.ts      Forecast browser persistence
   useAIAccessCode.ts      Session access-code hook
+  pushClient.ts           Browser push subscription helpers
+  pushNotifications.ts    Server push storage/delivery logic
+supabase/
+  migrations/             Notification tables and policies
+  cron-setup.example.sql  One-minute scheduler template
 ```
 
 ## Development workflow

@@ -13,6 +13,8 @@ flowchart LR
     ESPN[ESPN soccer endpoints]
     SportsDB[TheSportsDB]
     OpenAI[OpenAI Responses API]
+    Supabase[Supabase Postgres + Cron]
+    Push[Browser Push Service]
     Storage[localStorage / sessionStorage]
 
     Browser --> Pages
@@ -23,9 +25,13 @@ flowchart LR
     LiveData --> ESPN
     Routes --> SportsDB
     Routes --> OpenAI
+    Supabase --> Routes
+    Routes --> Supabase
+    Routes --> Push
+    Push --> Browser
 ```
 
-There is no database, message queue, authentication provider, or background worker.
+Supabase is used only for anonymous push subscriptions, match-state comparison, event deduplication, and scheduling. There is no user database, message queue, or authentication provider.
 
 ## Rendering model
 
@@ -95,20 +101,24 @@ No server synchronization occurs. Browser storage is the source of truth for the
 sequenceDiagram
     participant User
     participant Browser
-    participant Snapshot as /api/live-snapshot
+    participant Supabase
+    participant Check as /api/push/check
     participant Feed as ESPN feed
+    participant Push as Push service
 
     User->>Browser: Follow team and grant permission
-    loop Every 30 seconds while site is open
-        Browser->>Snapshot: GET current score snapshot
-        Snapshot->>Feed: Read cached/revalidated matches
-        Snapshot-->>Browser: Match IDs, teams, scores, status
-        Browser->>Browser: Compare with previous local snapshot
+    Browser->>Supabase: Save push subscription and favorite IDs
+    loop Every minute
+        Supabase->>Check: Authorized scheduled POST
+        Check->>Feed: Read cached/revalidated matches
+        Check->>Supabase: Compare/save state and claim new events
+        Check->>Push: Send event to interested subscriptions
+        Push->>Browser: Wake service worker
         Browser-->>User: Kickoff, goal, or full-time notification
     end
 ```
 
-The first snapshot establishes a baseline and does not produce event notifications.
+The first scheduled run establishes a baseline and does not produce event notifications. Unique event keys prevent duplicate deliveries across later runs.
 
 ## AI flow
 

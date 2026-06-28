@@ -9,6 +9,8 @@
 | TheSportsDB | Missing player images | Initials are shown instead |
 | OpenAI Responses API | Optional forecasts | Only AI features fail |
 | Vercel | Hosting and serverless execution | Application is unavailable |
+| Supabase | Push subscriptions, state, and one-minute scheduler | Background alerts stop |
+| Browser Push service | Notification transport | Affected browser subscriptions do not receive alerts |
 | Browser storage | Favorites and prediction history | Device-local features reset if storage is cleared |
 
 ## Routine health check
@@ -55,6 +57,7 @@ For wider public use, replace it with a shared store such as Vercel KV/Redis or 
 Current controls:
 
 - OpenAI key remains server-side.
+- Supabase service-role and VAPID private keys remain server-side.
 - Production AI routes require `AI_ACCESS_CODE`.
 - Access codes are compared with `timingSafeEqual`.
 - Cost-sensitive and polling endpoints are rate-limited.
@@ -130,9 +133,12 @@ The OpenAI request failed or its payload did not pass application validation. Th
 
 - Follow at least one team.
 - Grant browser notification permission.
-- Keep the site open.
-- Wait for the first 30-second snapshot to establish a baseline.
+- Confirm the enabled test notification.
+- Wait for the first scheduled run to establish a baseline.
+- Confirm Supabase Cron is running every minute.
+- Confirm the subscription exists in `push_subscriptions`.
 - Confirm the browser and operating system allow notifications.
+- On iPhone/iPad, install the site to the Home Screen first.
 - Reset blocked permission in browser site settings.
 
 ### Favorites or predictions disappeared
@@ -178,9 +184,8 @@ Before high-traffic or commercial use:
 
 1. Obtain a licensed, supported sports-data source.
 2. Add authentication and synchronized user data.
-3. Implement service-worker push notifications.
-4. Replace in-memory limits with distributed enforcement.
-5. Add automated tests and deployment gates.
-6. Add observability and incident alerts.
-7. Add a Content Security Policy.
-8. Complete privacy, data-processing, trademark, and licensing review.
+3. Replace in-memory limits with distributed enforcement.
+4. Add automated tests and deployment gates.
+5. Add observability and incident alerts.
+6. Add a Content Security Policy.
+7. Complete privacy, data-processing, trademark, and licensing review.

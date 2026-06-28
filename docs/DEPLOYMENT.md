@@ -73,6 +73,23 @@ Use a unique, random access code. Do not reuse the OpenAI key, Vercel password, 
 
 Apply secrets to Production and, only when needed, Preview. Redeploy after adding or changing variables.
 
+### Deploy with background notifications
+
+Create a Supabase project, apply `supabase/migrations`, and configure:
+
+```text
+SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY
+NEXT_PUBLIC_VAPID_PUBLIC_KEY
+VAPID_PRIVATE_KEY
+VAPID_SUBJECT
+CRON_SECRET
+```
+
+Generate VAPID keys with `npx web-push generate-vapid-keys --json`. Keep the private key and service-role key server-only.
+
+Run `supabase/cron-setup.example.sql` after replacing `CRON_SECRET_VALUE` with the same `CRON_SECRET` configured in Vercel. Supabase Vault encrypts the scheduler secret.
+
 ## Production verification
 
 Check these routes:
@@ -94,6 +111,8 @@ Verify:
 - The layout stays within a phone viewport.
 - Favorites survive a reload.
 - Notification permission shows a confirmation notification.
+- A subscription row is created in Supabase.
+- An authorized `POST /api/push/check` returns match/subscription counts.
 - AI returns HTTP 503 when disabled.
 - AI returns HTTP 401 for a wrong access code when enabled.
 - Response headers include `X-Content-Type-Options: nosniff` and `X-Frame-Options: DENY`.
