@@ -22,6 +22,7 @@ The shared code must match `AI_ACCESS_CODE`. It protects OpenAI spend but is not
 | `GET /api/player-image` | 30 requests/minute/IP |
 | `POST /api/push/subscriptions` | 12 requests/minute/IP |
 | `DELETE /api/push/subscriptions` | 6 requests/minute/IP |
+| `POST /api/push/test` | 3 requests/minute/IP |
 
 Rate limits are held in process memory. They can reset when a serverless instance restarts and do not coordinate across instances.
 
@@ -271,6 +272,18 @@ Protected scheduler endpoint. It:
 5. removes expired subscriptions returning HTTP 404 or 410.
 
 This endpoint is for Supabase Cron, not browsers. It returns HTTP 401 without the exact cron secret.
+
+## `POST /api/push/test`
+
+Sends a fixed, non-user-controlled confirmation message through the Web Push service to an exact stored endpoint. It is called once after a browser subscribes, proving that server-side delivery works.
+
+```json
+{
+  "endpoint": "https://push-service.example/..."
+}
+```
+
+The endpoint must already exist in `push_subscriptions`. Test content cannot be customized.
 
 ## Error handling
 

@@ -43,12 +43,15 @@ export async function enablePushNotifications() {
     });
   }
   await saveSubscription(subscription);
-  await registration.showNotification('World Cup alerts enabled', {
-    body: 'Background kickoff, goal, and final-score alerts are ready for followed teams.',
-    icon: '/icon.svg',
-    badge: '/badge.svg',
-    tag: 'world-cup-alerts-enabled',
+  const testResponse = await fetch('/api/push/test', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ endpoint: subscription.endpoint }),
   });
+  if (!testResponse.ok) {
+    const payload = (await testResponse.json().catch(() => ({}))) as { error?: string };
+    throw new Error(payload.error || 'The server could not deliver a test notification.');
+  }
   window.dispatchEvent(new Event('push-subscription-updated'));
 }
 
