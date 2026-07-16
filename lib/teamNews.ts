@@ -53,6 +53,8 @@ export type TeamNewsResult = {
 
 export async function fetchTeamNews(team: string): Promise<TeamNewsResult> {
   const normalizedTeam = team.trim().replace(/\s+/g, ' ');
+  const paid = await fetchConfiguredNewsProvider(normalizedTeam);
+  if (paid) return paid;
   const query = encodeURIComponent(`"${normalizedTeam}" football OR soccer when:30d`);
   const response = await fetch(`${GOOGLE_NEWS_RSS}?q=${query}&hl=en-US&gl=US&ceid=US:en`, {
     next: { revalidate: 60 * 30 },
@@ -85,6 +87,50 @@ export async function fetchTeamNews(team: string): Promise<TeamNewsResult> {
     },
     items,
   };
+}
+
+async function fetchConfiguredNewsProvider(team: string): Promise<TeamNewsResult | null> {
+  const endpoint = process.env.NEWS_API_URL;
+  const key = process.env.NEWS_API_KEY;
+  if (!endpoint || !key) return null;
+  try {
+    const url = new URL(endpoint);
+    url.searchParams.set('q', `${team} football soccer`);
+    url.searchParams.set('from', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
+    url.searchParams.set('pageSize', '12');
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${key}` },
+      next: { revalidate: 60 * 30 },
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!response.ok) return null;
+    const payload = await response.json() as {
+      articles?: Array<{ title?: string; url?: string; source?: { name?: string }; publishedAt?: string }>;
+    };
+    const items = (payload.articles ?? []).flatMap((article) => {
+      if (!article.title || !article.url || !article.publishedAt) return [];
+      return [{
+        title: article.title,
+        url: article.url,
+        source: article.source?.name ?? 'News provider',
+        publishedAt: article.publishedAt,
+        sentiment: scoreSentiment(article.title),
+      }];
+    }).slice(0, 12);
+    const positive = items.filter((item) => item.sentiment === 'positive').length;
+    const negative = items.filter((item) => item.sentiment === 'negative').length;
+    const neutral = items.length - positive - negative;
+    const label = positive > negative ? 'positive' : negative > positive ? 'negative' : 'neutral';
+    return {
+      team,
+      generatedAt: new Date().toISOString(),
+      windowDays: 30,
+      sentiment: { label, positive, neutral, negative, summary: sentimentSummary(team, label, positive, neutral, negative, items.length) },
+      items,
+    };
+  } catch {
+    return null;
+  }
 }
 
 function parseRssItems(xml: string): TeamNewsItem[] {

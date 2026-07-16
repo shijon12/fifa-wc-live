@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
-import { listFantasyProfiles, type FantasyPick } from '@/lib/auth';
+import { type FantasyPick } from '@/lib/auth';
+import { listFantasyProfilesForLeaderboard } from '@/lib/fantasyStore';
 import { fetchAllFantasyMatches, scoreFantasyPick } from '@/lib/fantasyScoring';
 import { fetchFantasyPlayerPool, squadPoints } from '@/lib/fantasySquad';
 
 export const runtime = 'nodejs';
 
 export async function GET() {
-  const [profiles, matches, players] = await Promise.all([listFantasyProfiles(), fetchAllFantasyMatches(), fetchFantasyPlayerPool()]);
+  const [profiles, matches, players] = await Promise.all([listFantasyProfilesForLeaderboard(), fetchAllFantasyMatches(), fetchFantasyPlayerPool()]);
   const rows = profiles
     .map((profile) => {
       const picks = profile.fantasy.picks ?? {};

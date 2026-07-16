@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getCurrentUser, getUserFantasyProfile, updateUserFantasyProfile, type FantasyProfile } from '@/lib/auth';
+import { getCurrentUser, type FantasyProfile } from '@/lib/auth';
+import { readFantasyProfile, writeFantasyProfile } from '@/lib/fantasyStore';
 import { clientIdentifier, rateLimit } from '@/lib/security';
 
 export const runtime = 'nodejs';
@@ -7,7 +8,7 @@ export const runtime = 'nodejs';
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
-  return NextResponse.json({ fantasy: await getUserFantasyProfile(user.id) });
+  return NextResponse.json({ fantasy: await readFantasyProfile(user) });
 }
 
 export async function PUT(request: Request) {
@@ -30,6 +31,6 @@ export async function PUT(request: Request) {
   const captainId = rawSquad?.captainId && uniquePlayerIds.includes(rawSquad.captainId) ? rawSquad.captainId : uniquePlayerIds[0] ?? null;
 
   const fantasy = { managerName, picks, squad: { playerIds: uniquePlayerIds, captainId } };
-  await updateUserFantasyProfile(user, fantasy);
+  await writeFantasyProfile(user, fantasy);
   return NextResponse.json({ fantasy });
 }

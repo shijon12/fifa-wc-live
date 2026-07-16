@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { ReportIssueForm } from '@/components/ReportIssueForm';
 import { SignOutButton } from '@/components/SignOutButton';
 import { SiteNav } from '@/components/SiteNav';
 import { getCurrentUser } from '@/lib/auth';
@@ -24,9 +25,18 @@ export default async function AccountPage() {
             <Link href="/fantasy" className="rounded-full bg-emerald-400 px-5 py-3 font-black text-[#07120d] hover:bg-emerald-300">
               Go to fantasy
             </Link>
+            <Link href="/fantasy/leagues" className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 font-black text-white hover:bg-white/10">
+              Private leagues
+            </Link>
+            {user.role === 'admin' && (
+              <Link href="/admin" className="rounded-full border border-amber-300/30 bg-amber-300/10 px-5 py-3 font-black text-amber-100 hover:bg-amber-300/20">
+                Admin
+              </Link>
+            )}
             <SignOutButton />
           </div>
         </section>
+        <ReportIssueForm />
       </div>
     </main>
   );
