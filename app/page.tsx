@@ -53,8 +53,16 @@ export default async function HomePage() {
                 <span className="block text-emerald-400">2026 live.</span>
               </h1>
               <p className="mt-6 max-w-xl text-base leading-7 text-stone-300 sm:text-lg">
-                Scores, fixtures, group tables, and team profiles from the live competition feed—without placeholder results.
+                Live scores, stats, fantasy, alerts, forecasts, and team news in one calm matchday dashboard.
               </p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link href="/fantasy" className="rounded-full bg-emerald-400 px-5 py-3 text-sm font-black text-[#07120d] transition hover:bg-emerald-300">
+                  Play fantasy
+                </Link>
+                <Link href="/leagues" className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
+                  Browse leagues
+                </Link>
+              </div>
             </div>
 
             {nextMatch && (
@@ -82,6 +90,13 @@ export default async function HomePage() {
           <Metric value={groups.size} label="Groups reporting" />
           <Metric value={matches.length} label="Matches in feed" />
           <Metric value={completed} label="Results posted" accent />
+        </section>
+
+        <section className="mt-10 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <FeatureCard href="/statistics" eyebrow="Stats" title="Bird's-eye view" body="Tournament leaders, player photos, team tables, and league-by-league analytics." />
+          <FeatureCard href="/fantasy" eyebrow="Fantasy" title="Build your XI" body="Pick a squad, choose a captain, make predictions, and climb the leaderboard." />
+          <FeatureCard href="/favorites" eyebrow="Alerts" title="Follow teams" body="Get kickoff, goal, and full-time notifications for World Cup and major club teams." />
+          <FeatureCard href="/predictions" eyebrow="Forecasts" title="Context before kickoff" body="Forecasts plus recent credible news sentiment for the teams involved." />
         </section>
 
         <div className="mt-10">
@@ -200,6 +215,17 @@ function Metric({ value, label, accent = false }: { value: number; label: string
       <p className={`text-2xl font-black tabular-nums sm:text-3xl ${accent ? 'text-amber-300' : 'text-white'}`}>{value}</p>
       <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-stone-500 sm:text-xs sm:tracking-[0.16em]">{label}</p>
     </div>
+  );
+}
+
+function FeatureCard({ href, eyebrow, title, body }: { href: string; eyebrow: string; title: string; body: string }) {
+  return (
+    <Link href={href} className="group rounded-3xl border border-white/10 bg-white/[0.035] p-5 transition hover:-translate-y-0.5 hover:border-emerald-400/30 hover:bg-white/[0.055]">
+      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300">{eyebrow}</p>
+      <h2 className="mt-3 text-xl font-black text-white">{title}</h2>
+      <p className="mt-2 text-sm leading-6 text-stone-500">{body}</p>
+      <span className="mt-4 inline-flex text-sm font-semibold text-stone-400 transition group-hover:text-emerald-300">Open →</span>
+    </Link>
   );
 }
 

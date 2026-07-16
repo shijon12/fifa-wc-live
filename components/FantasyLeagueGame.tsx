@@ -45,6 +45,7 @@ export function FantasyLeagueGame({ matches, players }: { matches: LeagueMatch[]
   const [{ managerName, picks, squad }, setFantasyState] = useState(readSavedState);
   const [syncStatus, setSyncStatus] = useState<'loading' | 'saved' | 'saving' | 'offline'>('loading');
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
+  const [activeTab, setActiveTab] = useState<'squad' | 'predictions' | 'leaderboard'>('squad');
   const loadedAccountRef = useRef(false);
   const lastSavedSnapshotRef = useRef('');
 
@@ -184,7 +185,15 @@ export function FantasyLeagueGame({ matches, players }: { matches: LeagueMatch[]
         </p>
       </section>
 
-      <section className="rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.055] p-5 sm:p-6">
+      <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-2">
+        <div className="grid gap-1 sm:grid-cols-3">
+          <TabButton active={activeTab === 'squad'} onClick={() => setActiveTab('squad')} label="Squad" description="Pick your XI" />
+          <TabButton active={activeTab === 'predictions'} onClick={() => setActiveTab('predictions')} label="Predictions" description="Match picks" />
+          <TabButton active={activeTab === 'leaderboard'} onClick={() => setActiveTab('leaderboard')} label="Leaderboard" description="Global table" />
+        </div>
+      </section>
+
+      {activeTab === 'squad' && <section className="rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.055] p-5 sm:p-6">
         <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300">Fantasy squad</p>
@@ -236,9 +245,9 @@ export function FantasyLeagueGame({ matches, players }: { matches: LeagueMatch[]
             })}
           </div>
         </div>
-      </section>
+      </section>}
 
-      <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-5 sm:p-6">
+      {activeTab === 'leaderboard' && <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-5 sm:p-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300">Global leaderboard</p>
@@ -258,9 +267,9 @@ export function FantasyLeagueGame({ matches, players }: { matches: LeagueMatch[]
             </div>
           )) : <p className="p-4 text-sm text-stone-500">No leaderboard entries yet. Save a squad or pick to appear here.</p>}
         </div>
-      </section>
+      </section>}
 
-      <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-5 sm:p-6">
+      {activeTab === 'predictions' && <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">Prediction league</p>
@@ -272,9 +281,9 @@ export function FantasyLeagueGame({ matches, players }: { matches: LeagueMatch[]
             Clear picks
           </button>
         </div>
-      </section>
+      </section>}
 
-      <section className="grid gap-4 xl:grid-cols-2">
+      {activeTab === 'predictions' && <section className="grid gap-4 xl:grid-cols-2">
         {upcoming.map((match) => {
           const pick = picks[match.id];
           return (
@@ -298,7 +307,7 @@ export function FantasyLeagueGame({ matches, players }: { matches: LeagueMatch[]
             </article>
           );
         })}
-      </section>
+      </section>}
     </div>
   );
 }
@@ -308,6 +317,19 @@ function PickButton({ selected, label, badge, onClick }: { selected: boolean; la
     <button type="button" onClick={onClick} className={`flex min-w-0 items-center gap-3 rounded-2xl border p-3 text-left transition ${selected ? 'border-emerald-300 bg-emerald-300/15 text-white' : 'border-white/10 bg-black/20 text-stone-300 hover:bg-white/10'}`}>
       {badge ? <span className="h-8 w-8 shrink-0 bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url("${badge}")` }} /> : <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-xs font-black">{label.slice(0, 2)}</span>}
       <span className="min-w-0 truncate font-bold">{label}</span>
+    </button>
+  );
+}
+
+function TabButton({ active, onClick, label, description }: { active: boolean; onClick: () => void; label: string; description: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-2xl px-4 py-3 text-left transition ${active ? 'bg-emerald-400 text-[#07120d]' : 'text-stone-400 hover:bg-white/10 hover:text-white'}`}
+    >
+      <span className="block text-sm font-black">{label}</span>
+      <span className={`mt-0.5 block text-xs ${active ? 'text-[#07120d]/70' : 'text-stone-600'}`}>{description}</span>
     </button>
   );
 }
