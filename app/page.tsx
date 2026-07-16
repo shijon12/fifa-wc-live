@@ -1,220 +1,141 @@
 import Link from 'next/link';
-import { MatchDayCenter } from '@/components/MatchDayCenter';
 import { KnockoutBracket } from '@/components/KnockoutBracket';
+import { MatchDayCenter } from '@/components/MatchDayCenter';
 import { SiteNav } from '@/components/SiteNav';
 import { fetchWorldCupMatches, fetchWorldCupStandings, type LiveStanding } from '@/lib/liveData';
+import { fetchRecentFootballNews, type TeamNewsItem } from '@/lib/teamNews';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const [matches, standings] = await Promise.all([
+  const [matches, standings, footballNews] = await Promise.all([
     fetchWorldCupMatches(),
     fetchWorldCupStandings(),
+    fetchRecentFootballNews(),
   ]);
-  const groups = standings.reduce<Map<string, LiveStanding[]>>((result, standing) => {
-    const group = result.get(standing.group) ?? [];
-    group.push(standing);
-    result.set(standing.group, group);
-    return result;
-  }, new Map());
-  const todayKey = new Intl.DateTimeFormat('en-CA', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    timeZone: 'America/New_York',
-  }).format(new Date());
-  const todaysMatches = matches.filter((match) => match.dateKey === todayKey);
-  const featuredMatches = todaysMatches.length
-    ? todaysMatches
-    : matches.filter((match) => match.status === 'Scheduled').slice(0, 6);
   const completed = matches.filter((match) => /final|full time/i.test(match.status)).length;
+  const live = matches.filter((match) => /live|half|progress/i.test(match.status)).length;
   const nextMatch = matches.find((match) => match.status === 'Scheduled') ?? matches.at(-1);
-  const updatedAt = standings.find((standing) => standing.updatedAt)?.updatedAt;
+  const featuredMatches = matches.filter((match) => match.status === 'Scheduled').slice(0, 6);
+  const groups = groupStandings(standings);
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#07120d] text-stone-100">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_15%_10%,_rgba(40,185,111,0.18),_transparent_28%),radial-gradient(circle_at_85%_25%,_rgba(245,185,66,0.12),_transparent_24%)]" />
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_15%_10%,_rgba(40,185,111,0.14),_transparent_28%),radial-gradient(circle_at_85%_25%,_rgba(245,185,66,0.09),_transparent_24%)]" />
       <div className="relative mx-auto max-w-[1440px] px-4 pb-16 pt-5 sm:px-6 lg:px-10">
         <SiteNav />
 
-        <section className="relative mt-6 overflow-hidden rounded-3xl border border-white/10 bg-[#0b1b13] px-5 py-8 shadow-2xl shadow-black/30 sm:rounded-[2rem] sm:px-10 sm:py-10 lg:px-14 lg:py-14">
-          <div className="absolute -right-16 -top-24 h-72 w-72 rounded-full border-[40px] border-emerald-400/10" />
-          <div className="absolute bottom-0 right-0 hidden h-full w-1/2 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.035))] lg:block" />
-
-          <div className="relative grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
-                Live tournament data
-              </div>
-              <p className="mt-7 text-xs font-medium uppercase tracking-[0.22em] text-stone-400 sm:text-sm sm:tracking-[0.35em]">USA • Canada • Mexico</p>
-              <h1 className="mt-3 max-w-3xl text-4xl font-black leading-[0.94] tracking-[-0.05em] text-white sm:text-6xl lg:text-8xl">
-                World Cup
-                <span className="block text-emerald-400">2026 live.</span>
-              </h1>
-              <p className="mt-6 max-w-xl text-base leading-7 text-stone-300 sm:text-lg">
-                Live scores, stats, fantasy, alerts, forecasts, and team news in one calm matchday dashboard.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3">
-                <Link href="/fantasy" className="rounded-full bg-emerald-400 px-5 py-3 text-sm font-black text-[#07120d] transition hover:bg-emerald-300">
-                  Play fantasy
-                </Link>
-                <Link href="/leagues" className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
-                  Browse leagues
-                </Link>
-              </div>
-            </div>
-
-            {nextMatch && (
-              <Link href={`/matches/${nextMatch.id}`} className="group rounded-3xl border border-white/10 bg-white/[0.055] p-5 backdrop-blur transition hover:border-emerald-400/40 hover:bg-white/[0.08]">
-                <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.2em] text-stone-400">
-                  <span>{nextMatch.status === 'Scheduled' ? 'Up next' : 'Latest result'}</span>
-                  <span>{nextMatch.date} · {nextMatch.kickoff}</span>
-                </div>
-                <div className="mt-6 space-y-4">
-                  <HeroTeam name={nextMatch.homeTeam} badge={nextMatch.homeBadge} score={nextMatch.homeScore} />
-                  <div className="h-px bg-white/10" />
-                  <HeroTeam name={nextMatch.awayTeam} badge={nextMatch.awayBadge} score={nextMatch.awayScore} />
-                </div>
-                <div className="mt-6 flex items-center justify-between text-sm text-stone-400">
-                  <span className="truncate">{nextMatch.venue}</span>
-                  <span className="text-emerald-300 transition group-hover:translate-x-1">Match center →</span>
-                </div>
-              </Link>
-            )}
-          </div>
-        </section>
-
-        <section className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <Metric value={standings.length} label="Live team records" />
-          <Metric value={groups.size} label="Groups reporting" />
-          <Metric value={matches.length} label="Matches in feed" />
-          <Metric value={completed} label="Results posted" accent />
-        </section>
-
-        <section className="mt-10 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <FeatureCard href="/statistics" eyebrow="Stats" title="Bird's-eye view" body="Tournament leaders, player photos, team tables, and league-by-league analytics." />
-          <FeatureCard href="/fantasy" eyebrow="Fantasy" title="Build your XI" body="Pick a squad, choose a captain, make predictions, and climb the leaderboard." />
-          <FeatureCard href="/favorites" eyebrow="Alerts" title="Follow teams" body="Get kickoff, goal, and full-time notifications for World Cup and major club teams." />
-          <FeatureCard href="/predictions" eyebrow="Forecasts" title="Context before kickoff" body="Forecasts plus recent credible news sentiment for the teams involved." />
-        </section>
-
-        <div className="mt-10">
-          <MatchDayCenter matches={featuredMatches} />
-        </div>
-
-        <section id="groups" className="mt-12 scroll-mt-6">
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-400">Live table</p>
-              <h2 className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">Group standings</h2>
-            </div>
-            <p className="text-sm text-stone-500">
-              {updatedAt ? `Feed updated ${updatedAt} UTC` : 'Awaiting standings update'}
+        <section className="mt-6 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-[2rem] border border-white/10 bg-[#0b1b13] p-6 shadow-2xl shadow-black/25 sm:p-10 lg:p-12">
+            <p className="inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-emerald-300">
+              Live football, fantasy, alerts
             </p>
+            <p className="mt-8 text-xs font-medium uppercase tracking-[0.28em] text-stone-500">Scores • fantasy • news • communities</p>
+            <h1 className="mt-3 max-w-4xl text-5xl font-black leading-[0.92] tracking-[-0.06em] text-white sm:text-7xl lg:text-8xl">
+              Football Pulse
+              <span className="block text-emerald-400">for matchday.</span>
+            </h1>
+            <p className="mt-6 max-w-2xl text-base leading-7 text-stone-300 sm:text-lg">
+              A social football hub where fans follow live matches, build fantasy squads, join private leagues, track favorite teams, and read recent football news before kickoff.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/fantasy" className="rounded-full bg-emerald-400 px-5 py-3 text-sm font-black text-[#07120d] transition hover:bg-emerald-300">
+                Build your squad
+              </Link>
+              <Link href="/leagues" className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
+                Explore live football
+              </Link>
+            </div>
           </div>
 
-          {groups.size ? (
-            <div className="grid gap-4 lg:grid-cols-2">
-              {Array.from(groups.entries()).map(([group, teams]) => (
-                <GroupTable key={group} group={group} teams={teams} />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-3xl border border-amber-400/20 bg-amber-400/5 p-8 text-amber-100">
-              The standings provider is temporarily unavailable. Live fixtures remain available above.
-            </div>
+          {nextMatch && (
+            <Link href={`/matches/${nextMatch.id}`} className="group rounded-[2rem] border border-white/10 bg-white/[0.045] p-6 transition hover:border-emerald-400/30 hover:bg-white/[0.065] sm:p-8">
+              <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">
+                <span>{nextMatch.status === 'Scheduled' ? 'Up next' : 'Latest result'}</span>
+                <span>{nextMatch.date} · {nextMatch.kickoff}</span>
+              </div>
+              <div className="mt-8 space-y-5">
+                <HeroTeam name={nextMatch.homeTeam} badge={nextMatch.homeBadge} score={nextMatch.homeScore} />
+                <div className="h-px bg-white/10" />
+                <HeroTeam name={nextMatch.awayTeam} badge={nextMatch.awayBadge} score={nextMatch.awayScore} />
+              </div>
+              <div className="mt-8 flex items-center justify-between text-sm text-stone-400">
+                <span className="truncate">{nextMatch.venue}</span>
+                <span className="text-emerald-300 transition group-hover:translate-x-1">Match center →</span>
+              </div>
+            </Link>
           )}
         </section>
 
-        <ThirdPlaceTable standings={standings} />
+        <section className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <Metric value={live} label="Live now" accent />
+          <Metric value={matches.length} label="Matches tracked" />
+          <Metric value={completed} label="Results posted" />
+          <Metric value={standings.length} label="Teams in feed" />
+        </section>
+
+        <section className="mt-10 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <FeatureCard href="/statistics" eyebrow="Stats" title="Understand the game" body="Player leaders, team tables, live form, and league-by-league analytics in one place." />
+          <FeatureCard href="/fantasy" eyebrow="Fantasy" title="Compete with friends" body="Build a squad, choose a captain, make picks, and climb global or private leaderboards." />
+          <FeatureCard href="/favorites" eyebrow="Alerts" title="Never miss moments" body="Follow teams and receive kickoff, goal, and full-time notifications." />
+          <FeatureCard href="/predictions" eyebrow="Forecasts" title="Context before kickoff" body="Forecasts, recent team news, and sentiment before big matches." />
+        </section>
+
+        <RecentFootballNews items={footballNews} />
+
+        <section className="mt-10">
+          <MatchDayCenter matches={featuredMatches.length ? featuredMatches : matches.slice(0, 6)} />
+        </section>
+
+        <section className="mt-12">
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-400">Competition snapshot</p>
+              <h2 className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">World Cup table preview</h2>
+            </div>
+            <Link href="/statistics?league=world-cup" className="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-stone-300 hover:bg-white/10">
+              Full stats →
+            </Link>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {Array.from(groups.entries()).slice(0, 4).map(([group, teams]) => (
+              <GroupPreview key={group} group={group} teams={teams} />
+            ))}
+          </div>
+        </section>
+
         <KnockoutBracket matches={matches} />
       </div>
     </main>
   );
 }
 
-function ThirdPlaceTable({ standings }: { standings: LiveStanding[] }) {
-  const thirdPlaced = standings
-    .filter((team) => team.rank === 3)
-    .sort((a, b) =>
-      b.points - a.points ||
-      b.goalDifference - a.goalDifference ||
-      b.goalsFor - a.goalsFor ||
-      b.won - a.won ||
-      a.team.localeCompare(b.team),
-    );
-
+function RecentFootballNews({ items }: { items: TeamNewsItem[] }) {
   return (
     <section className="mt-12">
-      <div className="mb-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-300">Qualification watch</p>
-        <h2 className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">Best third-place teams</h2>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-500">
-          The top eight currently advance to the Round of 32. Rankings use points, goal difference, goals scored, then wins.
-        </p>
-      </div>
-      <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035]">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[680px]">
-            <thead className="border-b border-white/10 text-xs uppercase tracking-wider text-stone-500">
-              <tr>
-                <th className="px-5 py-4 text-left">Rank</th>
-                <th className="px-3 py-4 text-left">Team</th>
-                <th className="px-3 py-4">Group</th>
-                <th className="px-3 py-4">P</th>
-                <th className="px-3 py-4">W</th>
-                <th className="px-3 py-4">GD</th>
-                <th className="px-3 py-4">Pts</th>
-                <th className="px-5 py-4 text-right">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {thirdPlaced.map((team, index) => (
-                <tr key={team.teamId} className="border-b border-white/[0.06] last:border-0">
-                  <td className="px-5 py-4 font-black text-white">{index + 1}</td>
-                  <td className="px-3 py-4">
-                    <Link href={`/teams/${team.teamId}`} className="flex items-center gap-3 font-bold text-white hover:text-emerald-300">
-                      {team.badge && <span className="h-7 w-7 bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url("${team.badge}")` }} />}
-                      {team.team}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-4 text-center text-stone-400">{team.group}</td>
-                  <td className="px-3 py-4 text-center text-stone-400">{team.played}</td>
-                  <td className="px-3 py-4 text-center text-stone-400">{team.won}</td>
-                  <td className="px-3 py-4 text-center text-stone-400">{team.goalDifference > 0 ? '+' : ''}{team.goalDifference}</td>
-                  <td className="px-3 py-4 text-center text-lg font-black text-white">{team.points}</td>
-                  <td className="px-5 py-4 text-right">
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${index < 8 ? 'bg-emerald-400/10 text-emerald-300' : 'bg-rose-400/10 text-rose-300'}`}>
-                      {index < 8 ? 'Advancing' : 'Outside'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-300">Football news</p>
+          <h2 className="mt-2 text-3xl font-black text-white">Recent football news</h2>
         </div>
+        <Link href="/predictions" className="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-stone-300 hover:bg-white/10">
+          Match context →
+        </Link>
       </div>
+      {items.length ? (
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {items.slice(0, 6).map((item) => (
+            <a key={`${item.source}-${item.title}`} href={item.url} target="_blank" rel="noreferrer" className="rounded-3xl border border-white/10 bg-white/[0.035] p-5 transition hover:border-sky-400/30 hover:bg-white/[0.055]">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">{item.source}</p>
+              <h3 className="mt-3 line-clamp-3 font-bold leading-6 text-white">{item.title}</h3>
+              <p className="mt-4 text-xs text-stone-500">{new Date(item.publishedAt).toLocaleDateString()}</p>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 text-sm text-stone-500">Recent football news is temporarily unavailable.</div>
+      )}
     </section>
-  );
-}
-
-function HeroTeam({ name, badge, score }: { name: string; badge: string | null; score: number | null }) {
-  return (
-    <div className="flex items-center gap-4">
-      <TeamMark name={name} badge={badge} size="h-12 w-12" />
-      <span className="min-w-0 flex-1 truncate text-xl font-bold text-white">{name}</span>
-      <span className="text-3xl font-black tabular-nums text-white">{score ?? '–'}</span>
-    </div>
-  );
-}
-
-function Metric({ value, label, accent = false }: { value: number; label: string; accent?: boolean }) {
-  return (
-    <div className={`rounded-2xl border p-4 sm:p-5 ${accent ? 'border-amber-300/20 bg-amber-300/10' : 'border-white/10 bg-white/[0.035]'}`}>
-      <p className={`text-2xl font-black tabular-nums sm:text-3xl ${accent ? 'text-amber-300' : 'text-white'}`}>{value}</p>
-      <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-stone-500 sm:text-xs sm:tracking-[0.16em]">{label}</p>
-    </div>
   );
 }
 
@@ -229,65 +150,51 @@ function FeatureCard({ href, eyebrow, title, body }: { href: string; eyebrow: st
   );
 }
 
-function GroupTable({ group, teams }: { group: string; teams: LiveStanding[] }) {
+function GroupPreview({ group, teams }: { group: string; teams: LiveStanding[] }) {
   return (
-    <article className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035]">
-      <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.22em] text-stone-500">Standings</p>
-          <h3 className="text-xl font-bold text-white">Group {group}</h3>
-        </div>
-        <Link href={`/groups/${group.toLowerCase()}`} className="text-sm font-semibold text-emerald-300 hover:text-emerald-200">
-          Full table →
-        </Link>
+    <article className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-black text-white">Group {group}</h3>
+        <Link href={`/groups/${group.toLowerCase()}`} className="text-sm font-semibold text-emerald-300">View →</Link>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[500px] text-sm">
-          <thead className="text-xs uppercase tracking-wider text-stone-500">
-            <tr>
-              <th className="px-5 py-3 text-left font-medium">Team</th>
-              <th className="px-2 py-3 font-medium">P</th>
-              <th className="px-2 py-3 font-medium">W</th>
-              <th className="px-2 py-3 font-medium">D</th>
-              <th className="px-2 py-3 font-medium">L</th>
-              <th className="px-2 py-3 font-medium">GD</th>
-              <th className="px-5 py-3 text-right font-medium">Pts</th>
-            </tr>
-          </thead>
-          <tbody>
-            {teams.map((team) => (
-              <tr key={team.teamId} className="border-t border-white/[0.06] text-stone-300">
-                <td className="px-5 py-3">
-                  <Link href={`/teams/${team.teamId}`} className="flex items-center gap-3 font-semibold text-white hover:text-emerald-300">
-                    <span className="w-4 text-xs text-stone-600">{team.rank}</span>
-                    <TeamMark name={team.team} badge={team.badge} size="h-7 w-7" />
-                    {team.team}
-                  </Link>
-                </td>
-                <td className="px-2 py-3 text-center">{team.played}</td>
-                <td className="px-2 py-3 text-center">{team.won}</td>
-                <td className="px-2 py-3 text-center">{team.drawn}</td>
-                <td className="px-2 py-3 text-center">{team.lost}</td>
-                <td className="px-2 py-3 text-center">{team.goalDifference > 0 ? '+' : ''}{team.goalDifference}</td>
-                <td className="px-5 py-3 text-right text-base font-black text-white">{team.points}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="mt-4 space-y-3">
+        {teams.slice(0, 4).map((team) => (
+          <Link key={team.teamId} href={`/teams/${team.teamId}`} className="flex items-center gap-3 rounded-2xl bg-black/20 px-3 py-2 hover:bg-white/10">
+            <span className="w-5 text-xs font-black text-stone-600">{team.rank}</span>
+            {team.badge && <span className="h-7 w-7 bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url("${team.badge}")` }} />}
+            <span className="min-w-0 flex-1 truncate font-bold text-white">{team.team}</span>
+            <span className="font-black text-white">{team.points}</span>
+          </Link>
+        ))}
       </div>
     </article>
   );
 }
 
-function TeamMark({ name, badge, size }: { name: string; badge: string | null; size: string }) {
-  return badge ? (
-    <span
-      role="img"
-      aria-label={`${name} badge`}
-      className={`${size} shrink-0 bg-contain bg-center bg-no-repeat`}
-      style={{ backgroundImage: `url("${badge}")` }}
-    />
-  ) : (
-    <span className={`${size} grid shrink-0 place-items-center rounded-full bg-white/10`}>⚽</span>
+function HeroTeam({ name, badge, score }: { name: string; badge: string | null; score: number | null }) {
+  return (
+    <div className="flex items-center gap-4">
+      {badge ? <span className="h-12 w-12 bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url("${badge}")` }} /> : <span className="grid h-12 w-12 place-items-center rounded-full bg-white/10 text-sm font-black text-white">{name.slice(0, 2)}</span>}
+      <span className="min-w-0 flex-1 truncate text-xl font-bold text-white">{name}</span>
+      <span className="text-3xl font-black tabular-nums text-white">{score ?? '–'}</span>
+    </div>
   );
+}
+
+function Metric({ value, label, accent = false }: { value: number; label: string; accent?: boolean }) {
+  return (
+    <div className={`rounded-2xl border p-4 sm:p-5 ${accent ? 'border-emerald-300/20 bg-emerald-300/10' : 'border-white/10 bg-white/[0.035]'}`}>
+      <p className={`text-2xl font-black tabular-nums sm:text-3xl ${accent ? 'text-emerald-300' : 'text-white'}`}>{value}</p>
+      <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-stone-500 sm:text-xs sm:tracking-[0.16em]">{label}</p>
+    </div>
+  );
+}
+
+function groupStandings(standings: LiveStanding[]) {
+  return standings.reduce<Map<string, LiveStanding[]>>((result, standing) => {
+    const group = result.get(standing.group) ?? [];
+    group.push(standing);
+    result.set(standing.group, group);
+    return result;
+  }, new Map());
 }

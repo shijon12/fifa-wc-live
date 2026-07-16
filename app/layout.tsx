@@ -4,8 +4,8 @@ import { LiveRefresh } from '@/components/LiveRefresh';
 import { NotificationEngine } from '@/components/NotificationEngine';
 
 export const metadata: Metadata = {
-  title: 'World Cup 2026 Live',
-  description: 'Live World Cup scores, fixtures, standings, and team profiles.',
+  title: 'Football Pulse',
+  description: 'A social live football hub for scores, fantasy, alerts, predictions, stats, and team news.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

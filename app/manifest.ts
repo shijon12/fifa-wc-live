@@ -2,9 +2,9 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'World Cup 2026 Live',
-    short_name: 'World Cup Live',
-    description: 'Live scores, standings, players, favorites, and match alerts.',
+    name: 'Football Pulse',
+    short_name: 'Football Pulse',
+    description: 'Live football scores, fantasy, alerts, predictions, stats, and news.',
     start_url: '/',
     display: 'standalone',
     background_color: '#07120d',

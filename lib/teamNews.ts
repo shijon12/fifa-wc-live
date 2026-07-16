@@ -89,6 +89,25 @@ export async function fetchTeamNews(team: string): Promise<TeamNewsResult> {
   };
 }
 
+export async function fetchRecentFootballNews(): Promise<TeamNewsItem[]> {
+  const paid = await fetchConfiguredNewsProvider('football');
+  if (paid?.items.length) return paid.items.slice(0, 6);
+
+  const query = encodeURIComponent('football OR soccer when:30d');
+  const response = await fetch(`${GOOGLE_NEWS_RSS}?q=${query}&hl=en-US&gl=US&ceid=US:en`, {
+    next: { revalidate: 60 * 30 },
+    headers: { Accept: 'application/rss+xml, text/xml' },
+    signal: AbortSignal.timeout(8_000),
+  });
+  if (!response.ok) return [];
+  const xml = await response.text();
+  return dedupeNews(parseRssItems(xml))
+    .filter((item) => isRecent(item.publishedAt, 30))
+    .filter((item) => credibleSource(item.source))
+    .slice(0, 6)
+    .map((item) => ({ ...item, sentiment: scoreSentiment(item.title) }));
+}
+
 async function fetchConfiguredNewsProvider(team: string): Promise<TeamNewsResult | null> {
   const endpoint = process.env.NEWS_API_URL;
   const key = process.env.NEWS_API_KEY;
