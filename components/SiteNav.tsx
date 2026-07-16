@@ -19,9 +19,9 @@ export function SiteNav() {
     <nav className="rounded-3xl border border-white/10 bg-black/25 px-4 py-3 backdrop-blur-xl">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <Link href="/" className="flex min-w-0 items-center gap-3">
-          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-400 font-black text-[#07120d]">FP</span>
+          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-400 font-black text-[#07120d]">TM</span>
           <span className="min-w-0">
-            <span className="block text-sm font-black uppercase tracking-[0.16em] text-white">Football Pulse</span>
+            <span className="block text-sm font-black uppercase tracking-[0.16em] text-white">The Matchroom</span>
             <span className="block text-[10px] uppercase tracking-[0.26em] text-stone-500">Live football hub</span>
           </span>
         </Link>

@@ -4,7 +4,7 @@ import { LiveRefresh } from '@/components/LiveRefresh';
 import { NotificationEngine } from '@/components/NotificationEngine';
 
 export const metadata: Metadata = {
-  title: 'Football Pulse',
+  title: 'The Matchroom',
   description: 'A social live football hub for scores, fantasy, alerts, predictions, stats, and team news.',
 };
 

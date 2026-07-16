@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Football Pulse',
-    short_name: 'Football Pulse',
+    name: 'The Matchroom',
+    short_name: 'Matchroom',
     description: 'Live football scores, fantasy, alerts, predictions, stats, and news.',
     start_url: '/',
     display: 'standalone',

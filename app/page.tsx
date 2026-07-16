@@ -32,7 +32,7 @@ export default async function HomePage() {
             </p>
             <p className="mt-8 text-xs font-medium uppercase tracking-[0.28em] text-stone-500">Scores • fantasy • news • communities</p>
             <h1 className="mt-3 max-w-4xl text-5xl font-black leading-[0.92] tracking-[-0.06em] text-white sm:text-7xl lg:text-8xl">
-              Football Pulse
+              The Matchroom
               <span className="block text-emerald-400">for matchday.</span>
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-7 text-stone-300 sm:text-lg">
