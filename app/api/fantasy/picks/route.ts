@@ -25,8 +25,11 @@ export async function PUT(request: Request) {
       return [[matchId.slice(0, 120), { matchId: matchId.slice(0, 120), choice: pick.choice, confidence }]];
     }).slice(0, 300),
   );
+  const rawSquad = input.squad;
+  const uniquePlayerIds = Array.from(new Set((rawSquad?.playerIds ?? []).map((id) => String(id).slice(0, 80)))).slice(0, 15);
+  const captainId = rawSquad?.captainId && uniquePlayerIds.includes(rawSquad.captainId) ? rawSquad.captainId : uniquePlayerIds[0] ?? null;
 
-  const fantasy = { managerName, picks };
+  const fantasy = { managerName, picks, squad: { playerIds: uniquePlayerIds, captainId } };
   await updateUserFantasyProfile(user, fantasy);
   return NextResponse.json({ fantasy });
 }

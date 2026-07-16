@@ -20,6 +20,10 @@ export type FantasyPick = {
 export type FantasyProfile = {
   managerName: string;
   picks: Record<string, FantasyPick>;
+  squad?: {
+    playerIds: string[];
+    captainId: string | null;
+  };
   updatedAt?: string;
 };
 
@@ -137,9 +141,10 @@ export async function updateUserFantasyProfile(user: AuthUser, fantasy: FantasyP
       user_metadata: {
         display_name: user.displayName,
         role: user.role,
-        fantasy: {
+    fantasy: {
           managerName: fantasy.managerName.slice(0, 60) || user.displayName,
           picks: fantasy.picks,
+          squad: fantasy.squad,
           updatedAt: new Date().toISOString(),
         },
       },

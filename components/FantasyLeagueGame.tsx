@@ -2,14 +2,28 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { LeagueMatch } from '@/lib/leagueData';
+import { FANTASY_BUDGET, FANTASY_SQUAD_SIZE, squadCost, squadPoints, type FantasyPlayer } from '@/lib/fantasySquad';
 
 type PickChoice = 'home' | 'draw' | 'away';
 type SavedPick = { matchId: string; choice: PickChoice; confidence: number };
-type FantasyState = { managerName: string; picks: Record<string, SavedPick> };
-type LeaderboardRow = { userId: string; managerName: string; score: number; picks: number; updatedAt: string | null };
+type FantasyState = {
+  managerName: string;
+  picks: Record<string, SavedPick>;
+  squad: { playerIds: string[]; captainId: string | null };
+};
+type LeaderboardRow = {
+  userId: string;
+  managerName: string;
+  score: number;
+  squadScore?: number;
+  totalScore?: number;
+  picks: number;
+  squadPlayers?: number;
+  updatedAt: string | null;
+};
 
 const STORAGE_KEY = 'fifa-wc-fantasy-picks-v1';
-const DEFAULT_STATE: FantasyState = { managerName: 'Guest Manager', picks: {} };
+const DEFAULT_STATE: FantasyState = { managerName: 'Guest Manager', picks: {}, squad: { playerIds: [], captainId: null } };
 
 function readSavedState(): FantasyState {
   if (typeof window === 'undefined') return DEFAULT_STATE;
@@ -17,22 +31,26 @@ function readSavedState(): FantasyState {
     const saved = window.localStorage.getItem(STORAGE_KEY);
     if (!saved) return DEFAULT_STATE;
     const parsed = JSON.parse(saved) as Partial<FantasyState>;
-    return { managerName: parsed.managerName ?? DEFAULT_STATE.managerName, picks: parsed.picks ?? DEFAULT_STATE.picks };
+    return {
+      managerName: parsed.managerName ?? DEFAULT_STATE.managerName,
+      picks: parsed.picks ?? {},
+      squad: parsed.squad ?? DEFAULT_STATE.squad,
+    };
   } catch {
     return DEFAULT_STATE;
   }
 }
 
-export function FantasyLeagueGame({ matches }: { matches: LeagueMatch[] }) {
-  const [{ managerName, picks }, setFantasyState] = useState(readSavedState);
+export function FantasyLeagueGame({ matches, players }: { matches: LeagueMatch[]; players: FantasyPlayer[] }) {
+  const [{ managerName, picks, squad }, setFantasyState] = useState(readSavedState);
   const [syncStatus, setSyncStatus] = useState<'loading' | 'saved' | 'saving' | 'offline'>('loading');
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
   const loadedAccountRef = useRef(false);
   const lastSavedSnapshotRef = useRef('');
 
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ managerName, picks }));
-  }, [managerName, picks]);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ managerName, picks, squad }));
+  }, [managerName, picks, squad]);
 
   useEffect(() => {
     let active = true;
@@ -44,13 +62,10 @@ export function FantasyLeagueGame({ matches }: { matches: LeagueMatch[] }) {
         ]);
         if (!active) return;
         if (profileResponse.ok) {
-          const data = await profileResponse.json() as { fantasy?: FantasyState };
-          if (data.fantasy) {
-            setFantasyState(data.fantasy);
-            lastSavedSnapshotRef.current = JSON.stringify(data.fantasy);
-          } else {
-            lastSavedSnapshotRef.current = JSON.stringify(DEFAULT_STATE);
-          }
+          const data = await profileResponse.json() as { fantasy?: Partial<FantasyState> };
+          const profile = { ...DEFAULT_STATE, ...data.fantasy, squad: data.fantasy?.squad ?? DEFAULT_STATE.squad };
+          setFantasyState(profile);
+          lastSavedSnapshotRef.current = JSON.stringify(profile);
           loadedAccountRef.current = true;
           setSyncStatus('saved');
         } else {
@@ -74,7 +89,7 @@ export function FantasyLeagueGame({ matches }: { matches: LeagueMatch[] }) {
 
   useEffect(() => {
     if (!loadedAccountRef.current) return;
-    const snapshot = JSON.stringify({ managerName, picks });
+    const snapshot = JSON.stringify({ managerName, picks, squad });
     if (snapshot === lastSavedSnapshotRef.current) return;
     const timeout = window.setTimeout(async () => {
       setSyncStatus('saving');
@@ -82,7 +97,7 @@ export function FantasyLeagueGame({ matches }: { matches: LeagueMatch[] }) {
         const response = await fetch('/api/fantasy/picks', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ managerName, picks }),
+          body: JSON.stringify({ managerName, picks, squad }),
         });
         if (response.ok) {
           lastSavedSnapshotRef.current = snapshot;
@@ -95,20 +110,24 @@ export function FantasyLeagueGame({ matches }: { matches: LeagueMatch[] }) {
       }
     }, 500);
     return () => window.clearTimeout(timeout);
-  }, [managerName, picks]);
+  }, [managerName, picks, squad]);
 
   const settled = useMemo(() => matches.filter((match) => match.state === 'post' && match.homeScore !== null && match.awayScore !== null), [matches]);
-  const score = settled.reduce((total, match) => total + scorePick(match, picks[match.id]), 0);
-  const activePicks = Object.keys(picks).length;
-  const upcoming = matches.filter((match) => match.state !== 'post').slice(0, 36);
+  const predictionScore = settled.reduce((total, match) => total + scorePick(match, picks[match.id]), 0);
+  const selectedIds = new Set(squad.playerIds);
+  const selectedPlayers = players.filter((player) => selectedIds.has(player.id));
+  const currentSquadCost = squadCost(players, squad);
+  const squadScore = squadPoints(players, squad);
+  const upcoming = matches.filter((match) => match.state !== 'post').slice(0, 30);
+
+  function updateState(next: Partial<FantasyState>) {
+    setFantasyState((current) => ({ ...current, ...next }));
+  }
 
   function savePick(match: LeagueMatch, choice: PickChoice) {
     setFantasyState((current) => ({
       ...current,
-      picks: {
-        ...current.picks,
-        [match.id]: { matchId: match.id, choice, confidence: current.picks[match.id]?.confidence ?? 1 },
-      },
+      picks: { ...current.picks, [match.id]: { matchId: match.id, choice, confidence: current.picks[match.id]?.confidence ?? 1 } },
     }));
   }
 
@@ -118,48 +137,104 @@ export function FantasyLeagueGame({ matches }: { matches: LeagueMatch[] }) {
       : current);
   }
 
-  function clearPicks() {
-    setFantasyState((current) => ({ ...current, picks: {} }));
+  function togglePlayer(player: FantasyPlayer) {
+    setFantasyState((current) => {
+      const ids = new Set(current.squad.playerIds);
+      if (ids.has(player.id)) ids.delete(player.id);
+      else {
+        if (ids.size >= FANTASY_SQUAD_SIZE) return current;
+        const nextIds = [...Array.from(ids), player.id];
+        if (squadCost(players, { playerIds: nextIds, captainId: current.squad.captainId }) > FANTASY_BUDGET) return current;
+        ids.add(player.id);
+      }
+      const playerIds = Array.from(ids);
+      return { ...current, squad: { playerIds, captainId: current.squad.captainId && playerIds.includes(current.squad.captainId) ? current.squad.captainId : playerIds[0] ?? null } };
+    });
+  }
+
+  function setCaptain(playerId: string) {
+    if (!squad.playerIds.includes(playerId)) return;
+    updateState({ squad: { ...squad, captainId: playerId } });
   }
 
   return (
     <div className="space-y-8">
       <section className="rounded-3xl border border-white/10 bg-[#0b1b13] p-6 shadow-2xl shadow-black/20 sm:p-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-300">Fantasy picks league</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-300">Fantasy football</p>
         <div className="mt-3 grid gap-6 lg:grid-cols-[1fr_360px] lg:items-end">
           <div>
-            <h1 className="text-4xl font-black tracking-[-0.04em] text-white sm:text-6xl">Pick matches. Climb the table.</h1>
+            <h1 className="text-4xl font-black tracking-[-0.04em] text-white sm:text-6xl">Build a squad. Make your picks.</h1>
             <p className="mt-4 max-w-3xl text-base leading-7 text-stone-300 sm:text-lg">
-              Choose winners across the World Cup and major global leagues. Confidence points multiply correct picks once final scores arrive from the live feed.
+              This now has a classic fantasy squad mode: pick 11 players, choose a captain, stay under budget, and score from real player performances.
             </p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
             <label className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500" htmlFor="managerName">Manager name</label>
-            <input id="managerName" value={managerName} onChange={(event) => setFantasyState((current) => ({ ...current, managerName: event.target.value }))} className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white outline-none ring-emerald-400/30 focus:ring-4" />
+            <input id="managerName" value={managerName} onChange={(event) => updateState({ managerName: event.target.value })} className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white outline-none ring-emerald-400/30 focus:ring-4" />
           </div>
         </div>
         <div className="mt-7 grid gap-3 sm:grid-cols-4">
-          <Metric value={score} label="Current points" accent />
-          <Metric value={activePicks} label="Picks saved" />
-          <Metric value={settled.length} label="Settled matches" />
-          <Metric value={upcoming.length} label="Open fixtures" />
+          <Metric value={squadScore + predictionScore} label="Total points" accent />
+          <Metric value={squadScore} label="Squad points" />
+          <Metric value={predictionScore} label="Prediction points" />
+          <Metric value={selectedPlayers.length} label="Squad players" />
         </div>
         <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
-          Sync status: {syncStatus === 'loading' ? 'loading account picks' : syncStatus === 'saving' ? 'saving to account' : syncStatus === 'saved' ? 'saved to your account' : 'local fallback active'}
+          Sync status: {syncStatus === 'loading' ? 'loading account' : syncStatus === 'saving' ? 'saving to account' : syncStatus === 'saved' ? 'saved to your account' : 'local fallback active'}
         </p>
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-5 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <section className="rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.055] p-5 sm:p-6">
+        <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">How scoring works</p>
-            <p className="mt-2 text-sm leading-6 text-stone-400">
-              Correct winner: 3 points × confidence. Correct draw: 5 points × confidence. Wrong pick: 0. Picks sync to your signed-in account and keep a local fallback.
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300">Fantasy squad</p>
+            <h2 className="mt-2 text-3xl font-black text-white">Pick your XI</h2>
+            <p className="mt-3 text-sm leading-6 text-stone-400">
+              Budget {FANTASY_BUDGET}. Select {FANTASY_SQUAD_SIZE} players from the live World Cup player pool. Captain earns double points.
             </p>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <Metric value={selectedPlayers.length} label={`of ${FANTASY_SQUAD_SIZE}`} />
+              <Metric value={Number((FANTASY_BUDGET - currentSquadCost).toFixed(1))} label="Budget left" accent />
+              <Metric value={squadScore} label="Squad pts" />
+              <Metric value={Number(currentSquadCost.toFixed(1))} label="Cost" />
+            </div>
+            <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4">
+              <h3 className="font-bold text-white">Your squad</h3>
+              <div className="mt-3 space-y-2">
+                {selectedPlayers.length ? selectedPlayers.map((player) => (
+                  <div key={player.id} className="flex items-center gap-2 text-sm">
+                    <span className="min-w-0 flex-1 truncate text-stone-300">{player.name}</span>
+                    <button type="button" onClick={() => setCaptain(player.id)} className={`rounded-full px-2 py-1 text-[11px] font-bold ${squad.captainId === player.id ? 'bg-amber-300 text-[#07120d]' : 'bg-white/10 text-stone-400'}`}>
+                      {squad.captainId === player.id ? 'Captain' : 'Make C'}
+                    </button>
+                  </div>
+                )) : <p className="text-sm text-stone-500">No players selected yet.</p>}
+              </div>
+            </div>
           </div>
-          <button type="button" onClick={clearPicks} className="rounded-full border border-rose-400/30 bg-rose-400/10 px-4 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-400/20">
-            Clear picks
-          </button>
+
+          <div className="grid max-h-[760px] gap-3 overflow-y-auto pr-1 md:grid-cols-2 xl:grid-cols-3">
+            {players.slice(0, 120).map((player) => {
+              const selected = selectedIds.has(player.id);
+              const disabled = !selected && (selectedPlayers.length >= FANTASY_SQUAD_SIZE || currentSquadCost + player.price > FANTASY_BUDGET);
+              return (
+                <button key={player.id} type="button" onClick={() => togglePlayer(player)} disabled={disabled} className={`rounded-2xl border p-3 text-left transition disabled:cursor-not-allowed disabled:opacity-40 ${selected ? 'border-emerald-300 bg-emerald-300/15' : 'border-white/10 bg-black/20 hover:bg-white/10'}`}>
+                  <div className="flex items-center gap-3">
+                    {player.headshot ? <span className="h-11 w-11 shrink-0 rounded-full bg-cover bg-top" style={{ backgroundImage: `url("${player.headshot}")` }} /> : <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white/10 text-xs font-black text-white">{player.name.slice(0, 2)}</span>}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-bold text-white">{player.name}</p>
+                      <p className="truncate text-xs text-stone-500">{player.team} · {player.position}</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+                    <MiniStat label="Pts" value={player.points} />
+                    <MiniStat label="Price" value={player.price} />
+                    <MiniStat label="Goals" value={player.goals} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </section>
 
@@ -177,11 +252,25 @@ export function FantasyLeagueGame({ matches }: { matches: LeagueMatch[] }) {
               <span className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-sm font-black text-white">{index + 1}</span>
               <div className="min-w-0 flex-1">
                 <p className="truncate font-bold text-white">{row.managerName}</p>
-                <p className="text-xs text-stone-500">{row.picks} picks saved</p>
+                <p className="text-xs text-stone-500">{row.squadPlayers ?? 0} squad players · {row.picks} picks</p>
               </div>
-              <span className="text-2xl font-black text-emerald-300">{row.score}</span>
+              <span className="text-2xl font-black text-emerald-300">{row.totalScore ?? row.score}</span>
             </div>
-          )) : <p className="p-4 text-sm text-stone-500">No leaderboard entries yet. Save a pick to appear here.</p>}
+          )) : <p className="p-4 text-sm text-stone-500">No leaderboard entries yet. Save a squad or pick to appear here.</p>}
+        </div>
+      </section>
+
+      <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">Prediction league</p>
+            <p className="mt-2 text-sm leading-6 text-stone-400">
+              Correct winner: 3 points × confidence. Correct draw: 5 points × confidence. Wrong pick: 0. This is separate from the classic fantasy squad score.
+            </p>
+          </div>
+          <button type="button" onClick={() => updateState({ picks: {} })} className="rounded-full border border-rose-400/30 bg-rose-400/10 px-4 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-400/20">
+            Clear picks
+          </button>
         </div>
       </section>
 
@@ -205,14 +294,11 @@ export function FantasyLeagueGame({ matches }: { matches: LeagueMatch[] }) {
                   <span className="text-lg font-black text-white">{pick?.confidence ?? 1}x</span>
                 </div>
                 <input id={`confidence-${match.id}`} type="range" min="1" max="5" value={pick?.confidence ?? 1} disabled={!pick} onChange={(event) => updateConfidence(match.id, Number(event.target.value))} className="mt-3 w-full accent-emerald-400 disabled:opacity-30" />
-                <p className="mt-2 text-xs text-stone-500">{pick ? `Saved pick for ${managerName || 'Guest Manager'}.` : 'Pick a result to unlock confidence points.'}</p>
               </div>
             </article>
           );
         })}
       </section>
-
-      {upcoming.length === 0 && <div className="rounded-3xl border border-amber-400/20 bg-amber-400/5 p-6 text-amber-100">No open fixtures are available in the current feed window. Check back when new matches are posted.</div>}
     </div>
   );
 }
@@ -228,6 +314,10 @@ function PickButton({ selected, label, badge, onClick }: { selected: boolean; la
 
 function Metric({ value, label, accent = false }: { value: number; label: string; accent?: boolean }) {
   return <div className={`rounded-2xl border p-4 ${accent ? 'border-emerald-300/20 bg-emerald-300/10' : 'border-white/10 bg-white/[0.035]'}`}><p className={`text-2xl font-black tabular-nums ${accent ? 'text-emerald-300' : 'text-white'}`}>{value}</p><p className="mt-1 text-xs uppercase tracking-[0.16em] text-stone-500">{label}</p></div>;
+}
+
+function MiniStat({ label, value }: { label: string; value: number }) {
+  return <span className="rounded-xl bg-white/[0.06] px-2 py-1"><span className="block font-black text-white">{value}</span><span className="text-[10px] uppercase tracking-wider text-stone-500">{label}</span></span>;
 }
 
 function scorePick(match: LeagueMatch, pick: SavedPick | undefined) {

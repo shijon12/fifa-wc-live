@@ -3,6 +3,7 @@ import { FantasyLeagueGame } from '@/components/FantasyLeagueGame';
 import { SiteNav } from '@/components/SiteNav';
 import { getCurrentUser } from '@/lib/auth';
 import { fetchAllFantasyMatches } from '@/lib/fantasyScoring';
+import { fetchFantasyPlayerPool } from '@/lib/fantasySquad';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +11,7 @@ export default async function FantasyPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/sign-in?next=/fantasy');
 
-  const matches = await fetchAllFantasyMatches();
+  const [matches, players] = await Promise.all([fetchAllFantasyMatches(), fetchFantasyPlayerPool()]);
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#07120d] text-stone-100">
@@ -18,7 +19,7 @@ export default async function FantasyPage() {
       <div className="relative mx-auto max-w-[1440px] px-4 pb-16 pt-5 sm:px-6 lg:px-10">
         <SiteNav />
         <div className="mt-6">
-          <FantasyLeagueGame matches={matches} />
+          <FantasyLeagueGame matches={matches} players={players} />
         </div>
       </div>
     </main>
