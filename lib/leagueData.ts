@@ -52,6 +52,8 @@ export type LeagueMatch = {
   id: string;
   leagueId: string;
   league: string;
+  homeTeamId: string;
+  awayTeamId: string;
   homeTeam: string;
   awayTeam: string;
   homeBadge: string | null;
@@ -227,7 +229,7 @@ function mapEvent(event: EspnEvent, league: SupportedLeague): LeagueMatch | null
   const competition = event.competitions?.[0];
   const home = competition?.competitors?.find((entry) => entry.homeAway === 'home');
   const away = competition?.competitors?.find((entry) => entry.homeAway === 'away');
-  if (!event.id || !event.date || !competition || !home?.team?.displayName || !away?.team?.displayName) return null;
+  if (!event.id || !event.date || !competition || !home?.id || !away?.id || !home.team?.displayName || !away.team?.displayName) return null;
 
   const formatted = formatEventDate(event.date);
   const state = (competition.status?.type?.state ?? 'pre') as LeagueMatch['state'];
@@ -238,6 +240,8 @@ function mapEvent(event: EspnEvent, league: SupportedLeague): LeagueMatch | null
     id: `${league.id}:${event.id}`,
     leagueId: league.id,
     league: league.label,
+    homeTeamId: home.id,
+    awayTeamId: away.id,
     homeTeam: home.team.displayName,
     awayTeam: away.team.displayName,
     homeBadge: logo(home.team),

@@ -1,6 +1,11 @@
 import 'server-only';
 import webPush, { type PushSubscription } from 'web-push';
 import type { LiveMatch } from '@/lib/liveData';
+import type { LeagueMatch } from '@/lib/leagueData';
+
+type NotificationMatch = Pick<LiveMatch, 'id' | 'homeTeamId' | 'awayTeamId' | 'homeTeam' | 'awayTeam' | 'homeScore' | 'awayScore' | 'status'> & {
+  notificationUrl?: string;
+};
 
 export type StoredPushSubscription = {
   endpoint: string;
@@ -100,7 +105,7 @@ export async function getMatchStates() {
   );
 }
 
-export async function saveMatchStates(matches: LiveMatch[]) {
+export async function saveMatchStates(matches: NotificationMatch[]) {
   if (!matches.length) return;
   await supabaseFetch('notification_match_state?on_conflict=match_id', {
     method: 'POST',
@@ -166,13 +171,13 @@ export async function deliverPushEvent(event: PushEvent, subscriptions: StoredPu
   return { delivered, removed };
 }
 
-export function detectPushEvents(matches: LiveMatch[], previous: Map<string, StoredMatchState>) {
+export function detectPushEvents(matches: NotificationMatch[], previous: Map<string, StoredMatchState>) {
   const events: PushEvent[] = [];
   for (const match of matches) {
     const before = previous.get(match.id);
     if (!before) continue;
     const teamIds = [match.homeTeamId, match.awayTeamId];
-    const url = `/matches/${match.id}`;
+    const url = match.notificationUrl ?? `/matches/${match.id}`;
     if (!isLive(before.status) && isLive(match.status)) {
       events.push({
         event_key: `kickoff:${match.id}`,
@@ -208,6 +213,20 @@ export function detectPushEvents(matches: LiveMatch[], previous: Map<string, Sto
     }
   }
   return events;
+}
+
+export function leagueMatchToNotificationMatch(match: LeagueMatch): NotificationMatch {
+  return {
+    id: match.id,
+    homeTeamId: match.homeTeamId,
+    awayTeamId: match.awayTeamId,
+    homeTeam: match.homeTeam,
+    awayTeam: match.awayTeam,
+    homeScore: match.homeScore,
+    awayScore: match.awayScore,
+    status: match.status,
+    notificationUrl: `/leagues?league=${match.leagueId}`,
+  };
 }
 
 function isLive(status: string) {

@@ -1,4 +1,4 @@
-export type FavoriteTeam = { id: string; name: string; logo: string | null };
+export type FavoriteTeam = { id: string; name: string; logo: string | null; competition?: string; href?: string | null };
 export const FAVORITES_KEY = 'world-cup-favorite-teams-v1';
 
 export function readFavorites(): FavoriteTeam[] {

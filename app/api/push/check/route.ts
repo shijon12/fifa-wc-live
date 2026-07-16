@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { fetchLeagueMatches, supportedLeagues } from '@/lib/leagueData';
 import { fetchWorldCupMatches } from '@/lib/liveData';
 import {
   claimPushEvent,
@@ -6,6 +7,7 @@ import {
   detectPushEvents,
   getMatchStates,
   getPushSubscriptions,
+  leagueMatchToNotificationMatch,
   pushConfiguration,
   saveMatchStates,
 } from '@/lib/pushNotifications';
@@ -20,11 +22,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Push notifications are not configured.' }, { status: 503 });
   }
   try {
-    const [matches, states, subscriptions] = await Promise.all([
+    const alertLeagues = supportedLeagues.filter((league) =>
+      ['champions-league', 'premier-league', 'laliga', 'serie-a', 'bundesliga', 'ligue-1', 'mls'].includes(league.id),
+    );
+    const [worldCupMatches, leagueMatches, states, subscriptions] = await Promise.all([
       fetchWorldCupMatches(),
+      Promise.all(alertLeagues.map(fetchLeagueMatches)),
       getMatchStates(),
       getPushSubscriptions(),
     ]);
+    const matches = [
+      ...worldCupMatches,
+      ...leagueMatches.flat().map(leagueMatchToNotificationMatch),
+    ];
     if (!matches.length) {
       return NextResponse.json({ error: 'The live match feed returned no matches.' }, { status: 503 });
     }

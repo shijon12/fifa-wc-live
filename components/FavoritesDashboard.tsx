@@ -62,7 +62,7 @@ export function FavoritesDashboard({ teams }: { teams: FavoriteTeam[] }) {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="font-bold text-white">Background match alerts</h2>
-            <p className="mt-1 text-sm text-stone-500">Receive kickoff, goal, and full-time alerts for followed teams—even after closing the site.</p>
+            <p className="mt-1 text-sm text-stone-500">Receive kickoff, goal, and full-time alerts for followed World Cup and major club teams, even after closing the site.</p>
           </div>
           <button
             type="button"
@@ -80,9 +80,16 @@ export function FavoritesDashboard({ teams }: { teams: FavoriteTeam[] }) {
         <h2 className="text-2xl font-bold text-white">Following {favorites.length} teams</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {teams.map((team) => (
-            <div key={team.id} className={`flex items-center gap-3 rounded-2xl border p-4 ${favorites.some((entry) => entry.id === team.id) ? 'border-amber-300/25 bg-amber-300/5' : 'border-white/10 bg-white/[0.025]'}`}>
+            <div key={`${team.id}:${team.competition ?? 'team'}`} className={`flex items-center gap-3 rounded-2xl border p-4 ${favorites.some((entry) => entry.id === team.id) ? 'border-amber-300/25 bg-amber-300/5' : 'border-white/10 bg-white/[0.025]'}`}>
               {team.logo && <span className="h-10 w-10 bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url("${team.logo}")` }} />}
-              <Link href={`/teams/${team.id}`} className="min-w-0 flex-1 truncate font-bold text-white hover:text-emerald-300">{team.name}</Link>
+              <div className="min-w-0 flex-1">
+                {team.href ? (
+                  <Link href={team.href} className="block truncate font-bold text-white hover:text-emerald-300">{team.name}</Link>
+                ) : (
+                  <p className="truncate font-bold text-white">{team.name}</p>
+                )}
+                {team.competition && <p className="truncate text-xs text-stone-500">{team.competition}</p>}
+              </div>
               <FavoriteButton team={team} compact />
             </div>
           ))}

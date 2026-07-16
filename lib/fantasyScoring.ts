@@ -28,6 +28,8 @@ function toFantasyMatch(match: LiveMatch): LeagueMatch {
     id: `world-cup:${match.id}`,
     leagueId: 'world-cup',
     league: 'FIFA World Cup 2026',
+    homeTeamId: match.homeTeamId,
+    awayTeamId: match.awayTeamId,
     homeTeam: match.homeTeam,
     awayTeam: match.awayTeam,
     homeBadge: match.homeBadge,
