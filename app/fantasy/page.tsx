@@ -2,8 +2,7 @@ import { redirect } from 'next/navigation';
 import { FantasyLeagueGame } from '@/components/FantasyLeagueGame';
 import { SiteNav } from '@/components/SiteNav';
 import { getCurrentUser } from '@/lib/auth';
-import { fetchAllLeagueMatches, type LeagueMatch } from '@/lib/leagueData';
-import { fetchWorldCupMatches, type LiveMatch } from '@/lib/liveData';
+import { fetchAllFantasyMatches } from '@/lib/fantasyScoring';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,14 +10,7 @@ export default async function FantasyPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/sign-in?next=/fantasy');
 
-  const [worldCupMatches, leagueBundles] = await Promise.all([
-    fetchWorldCupMatches(),
-    fetchAllLeagueMatches(),
-  ]);
-  const matches = [
-    ...worldCupMatches.map(toFantasyMatch),
-    ...leagueBundles.flatMap((bundle) => bundle.matches),
-  ].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+  const matches = await fetchAllFantasyMatches();
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#07120d] text-stone-100">
@@ -31,42 +23,4 @@ export default async function FantasyPage() {
       </div>
     </main>
   );
-}
-
-function toFantasyMatch(match: LiveMatch): LeagueMatch {
-  const state = /live/i.test(match.status) ? 'in' : /final|full time/i.test(match.status) ? 'post' : 'pre';
-  const homeScore = match.homeScore ?? 0;
-  const awayScore = match.awayScore ?? 0;
-  const homeWinPct = state === 'post' ? (homeScore > awayScore ? 100 : 0) : 42;
-  const awayWinPct = state === 'post' ? (awayScore > homeScore ? 100 : 0) : 32;
-  const drawPct = state === 'post' ? (homeScore === awayScore ? 100 : 0) : 26;
-
-  return {
-    id: `wc-${match.id}`,
-    leagueId: 'mls',
-    league: 'FIFA World Cup 2026',
-    homeTeam: match.homeTeam,
-    awayTeam: match.awayTeam,
-    homeBadge: match.homeBadge,
-    awayBadge: match.awayBadge,
-    homeScore: match.homeScore,
-    awayScore: match.awayScore,
-    venue: match.venue,
-    kickoff: match.kickoff,
-    date: match.date,
-    dateKey: match.dateKey,
-    timestamp: match.timestamp,
-    status: match.status,
-    state,
-    homeForm: null,
-    awayForm: null,
-    insight: {
-      homeWinPct,
-      drawPct,
-      awayWinPct,
-      confidence: state === 'post' ? 'High' : 'Low',
-      lean: state === 'post' ? 'Result posted' : 'Even tournament matchup',
-      note: 'World Cup fantasy pick generated from the tournament fixture feed.',
-    },
-  };
 }

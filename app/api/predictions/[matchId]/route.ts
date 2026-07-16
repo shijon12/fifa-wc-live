@@ -52,13 +52,6 @@ const predictionSchema = {
 
 export async function POST(request: Request, { params }: { params: Promise<{ matchId: string }> }) {
   const { matchId } = await params;
-  const access = verifyAIAccess(request);
-  if (!access.allowed) {
-    return NextResponse.json(
-      { error: access.reason },
-      { status: process.env.AI_ACCESS_CODE ? 401 : 503 },
-    );
-  }
   const quota = rateLimit(`prediction:${clientIdentifier(request)}`, 5, 60_000);
   if (!quota.allowed) {
     return NextResponse.json(
@@ -66,17 +59,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ mat
       { status: 429, headers: { 'Retry-After': String(quota.retryAfter) } },
     );
   }
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      {
-        error: 'AI predictions require OPENAI_API_KEY in .env.local.',
-        code: 'missing_api_key',
-      },
-      { status: 503 },
-    );
-  }
-
   const [match, standings] = await Promise.all([
     fetchWorldCupMatch(matchId),
     fetchWorldCupStandings(),
@@ -90,6 +72,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ mat
 
   const homeStanding = standings.find((team) => team.teamId === match.homeTeamId);
   const awayStanding = standings.find((team) => team.teamId === match.awayTeamId);
+  const fallback = deterministicPrediction(match.id, match.homeTeam, match.awayTeam, homeStanding, awayStanding);
+  const access = verifyAIAccess(request);
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey || !access.allowed) {
+    return NextResponse.json({
+      matchId: match.id,
+      homeTeam: match.homeTeam,
+      awayTeam: match.awayTeam,
+      generatedAt: new Date().toISOString(),
+      model: 'live-data-forecast',
+      ...fallback,
+    });
+  }
+
   const model = process.env.OPENAI_MODEL || 'gpt-5.4-mini';
   const context = {
     match: {
@@ -148,10 +144,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ mat
 
   const payload = (await response.json()) as OpenAIResponse;
   if (!response.ok) {
-    return NextResponse.json(
-      { error: payload.error?.message || 'The AI prediction service failed.' },
-      { status: 502 },
-    );
+    return NextResponse.json({
+      matchId: match.id,
+      homeTeam: match.homeTeam,
+      awayTeam: match.awayTeam,
+      generatedAt: new Date().toISOString(),
+      model: 'live-data-forecast',
+      ...fallback,
+      summary: `${fallback.summary} OpenAI was unavailable, so this fallback forecast used the live table model.`,
+      factors: [...fallback.factors, payload.error?.message ? `OpenAI fallback reason: ${payload.error.message.slice(0, 90)}` : 'OpenAI fallback reason: prediction service unavailable'].slice(0, 5),
+    });
   }
 
   const outputText = payload.output
@@ -189,4 +191,43 @@ export async function POST(request: Request, { params }: { params: Promise<{ mat
     ...prediction,
     ...normalized,
   });
+}
+
+function deterministicPrediction(
+  matchId: string,
+  homeTeam: string,
+  awayTeam: string,
+  homeStanding: Awaited<ReturnType<typeof fetchWorldCupStandings>>[number] | undefined,
+  awayStanding: Awaited<ReturnType<typeof fetchWorldCupStandings>>[number] | undefined,
+): ModelPrediction {
+  const homeStrength = standingStrength(homeStanding) + 4;
+  const awayStrength = standingStrength(awayStanding);
+  const diff = Math.max(-20, Math.min(20, homeStrength - awayStrength));
+  const homeWinPct = Math.round(Math.max(24, Math.min(64, 42 + diff)));
+  const awayWinPct = Math.round(Math.max(18, Math.min(54, 32 - diff * 0.7)));
+  const drawPct = Math.max(12, 100 - homeWinPct - awayWinPct);
+  const normalizedHome = 100 - awayWinPct - drawPct;
+  const predictedOutcome = normalizedHome >= awayWinPct && normalizedHome >= drawPct ? 'home' : awayWinPct >= drawPct ? 'away' : 'draw';
+  const homeGoals = predictedOutcome === 'home' ? 2 : predictedOutcome === 'draw' ? 1 : 1;
+  const awayGoals = predictedOutcome === 'away' ? 2 : predictedOutcome === 'draw' ? 1 : 0;
+
+  return {
+    homeWinPct: normalizedHome,
+    drawPct,
+    awayWinPct,
+    predictedOutcome,
+    confidence: Math.max(normalizedHome, drawPct, awayWinPct),
+    predictedScore: { home: homeGoals, away: awayGoals },
+    summary: `${homeTeam} vs ${awayTeam} forecast generated from live standings, goal difference, scoring output, and a small home-side adjustment. This is a probabilistic fan forecast, not betting advice.`,
+    factors: [
+      homeStanding ? `${homeTeam}: ${homeStanding.points} pts, ${homeStanding.goalDifference >= 0 ? '+' : ''}${homeStanding.goalDifference} GD` : `${homeTeam}: no table row available yet`,
+      awayStanding ? `${awayTeam}: ${awayStanding.points} pts, ${awayStanding.goalDifference >= 0 ? '+' : ''}${awayStanding.goalDifference} GD` : `${awayTeam}: no table row available yet`,
+      `Model key: live-data fallback ${matchId.slice(-4)}`,
+    ],
+  };
+}
+
+function standingStrength(standing: Awaited<ReturnType<typeof fetchWorldCupStandings>>[number] | undefined) {
+  if (!standing) return 0;
+  return standing.points * 3 + standing.goalDifference * 1.2 + standing.goalsFor * 0.7 - standing.goalsAgainst * 0.5;
 }

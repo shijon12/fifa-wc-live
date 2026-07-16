@@ -11,6 +11,18 @@ export type AuthUser = {
   role: 'user' | 'admin';
 };
 
+export type FantasyPick = {
+  matchId: string;
+  choice: 'home' | 'draw' | 'away';
+  confidence: number;
+};
+
+export type FantasyProfile = {
+  managerName: string;
+  picks: Record<string, FantasyPick>;
+  updatedAt?: string;
+};
+
 type StoredUser = AuthUser & {
   createdAt: string | null;
 };
@@ -22,6 +34,7 @@ type SupabaseAuthUser = {
   user_metadata?: {
     display_name?: string;
     role?: 'user' | 'admin';
+    fantasy?: FantasyProfile;
   };
 };
 
@@ -101,13 +114,68 @@ export async function findUserById(id: string): Promise<AuthUser | null> {
   return mapAuthUser((await response.json()) as SupabaseAuthUser);
 }
 
+export async function getUserFantasyProfile(id: string): Promise<FantasyProfile> {
+  const { url } = supabaseConfig();
+  const response = await fetch(`${url}/auth/v1/admin/users/${encodeURIComponent(id)}`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error('Unable to read fantasy profile.');
+  const user = (await response.json()) as SupabaseAuthUser;
+  return user.user_metadata?.fantasy ?? {
+    managerName: user.user_metadata?.display_name ?? user.email.split('@')[0],
+    picks: {},
+  };
+}
+
+export async function updateUserFantasyProfile(user: AuthUser, fantasy: FantasyProfile) {
+  const { url } = supabaseConfig();
+  const response = await fetch(`${url}/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
+    method: 'PUT',
+    headers: headers(),
+    body: JSON.stringify({
+      user_metadata: {
+        display_name: user.displayName,
+        role: user.role,
+        fantasy: {
+          managerName: fantasy.managerName.slice(0, 60) || user.displayName,
+          picks: fantasy.picks,
+          updatedAt: new Date().toISOString(),
+        },
+      },
+    }),
+  });
+  if (!response.ok) throw new Error('Unable to save fantasy profile.');
+}
+
+export async function listFantasyProfiles(): Promise<Array<AuthUser & { fantasy: FantasyProfile }>> {
+  const { url } = supabaseConfig();
+  const response = await fetch(`${url}/auth/v1/admin/users?per_page=200`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error('Unable to read leaderboard.');
+  const payload = (await response.json()) as { users?: SupabaseAuthUser[] } | SupabaseAuthUser[];
+  const users = Array.isArray(payload) ? payload : payload.users ?? [];
+  return users.map((entry) => {
+    const user = mapAuthUser(entry);
+    return {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      role: user.role,
+      fantasy: entry.user_metadata?.fantasy ?? { managerName: user.displayName, picks: {} },
+    };
+  });
+}
+
 export async function createUser(input: { email: string; displayName: string; password: string }): Promise<AuthUser> {
   const { url } = supabaseConfig();
   const response = await fetch(`${url}/auth/v1/admin/users`, {
     method: 'POST',
     headers: headers(),
     body: JSON.stringify({
-    email: normalizeEmail(input.email),
+      email: normalizeEmail(input.email),
       password: input.password,
       email_confirm: true,
       user_metadata: {
