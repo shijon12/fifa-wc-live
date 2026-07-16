@@ -56,11 +56,8 @@ export function TeamNewsSentiment({ teams }: { teams: string[] }) {
     <section className="mt-8 rounded-[2rem] border border-sky-400/20 bg-[radial-gradient(circle_at_85%_10%,rgba(56,189,248,0.12),transparent_35%),rgba(255,255,255,0.035)] p-6 sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-300">Team news sentiment</p>
-          <h2 className="mt-2 text-3xl font-bold tracking-tight text-white">Last 30 days</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-400">
-            Recent credible-source headlines, similar to a stock news panel. Sentiment is headline-based context, not certainty.
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-300">Team news</p>
+          <h2 className="mt-2 text-3xl font-bold tracking-tight text-white">Recent news</h2>
         </div>
         <div className="flex max-w-full gap-1 overflow-x-auto rounded-full border border-white/10 bg-black/20 p-1">
           {teams.map((team) => (
@@ -102,7 +99,7 @@ export function TeamNewsSentiment({ teams }: { teams: string[] }) {
                   <h3 className="mt-2 font-bold leading-6 text-white">{item.title}</h3>
                   <p className="mt-2 text-xs text-stone-500">{new Date(item.publishedAt).toLocaleDateString()}</p>
                 </a>
-              )) : <p className="rounded-xl border border-white/10 p-4 text-sm text-stone-500">No recent credible stories found for this team.</p>}
+              )) : <p className="rounded-xl border border-white/10 p-4 text-sm text-stone-500">No recent news found for this team.</p>}
             </div>
             {news.items.length > 5 && (
               <button type="button" onClick={() => setExpanded((value) => !value)} className="mt-5 rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-sky-200 hover:border-sky-400/40">
