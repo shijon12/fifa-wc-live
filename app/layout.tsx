@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import './globals.css';
+import { AnalyticsTracker } from '@/components/AnalyticsTracker';
 import { LiveRefresh } from '@/components/LiveRefresh';
 import { NotificationEngine } from '@/components/NotificationEngine';
 
@@ -12,6 +14,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
+        <Suspense>
+          <AnalyticsTracker />
+        </Suspense>
         <LiveRefresh />
         <NotificationEngine />
         {children}

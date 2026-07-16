@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { FeedbackForm } from '@/components/FeedbackForm';
 import { KnockoutBracket } from '@/components/KnockoutBracket';
 import { MatchDayCenter } from '@/components/MatchDayCenter';
 import { SiteNav } from '@/components/SiteNav';
@@ -82,6 +83,20 @@ export default async function HomePage() {
         </section>
 
         <RecentFootballNews items={footballNews} />
+
+        <section className="mt-10 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.035] p-6 sm:p-7">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-300">What we are learning</p>
+            <h2 className="mt-3 text-3xl font-black tracking-[-0.03em] text-white">Help shape the product before it gets bigger.</h2>
+            <p className="mt-4 text-sm leading-7 text-stone-400">
+              The Matchroom is tracking what fans actually use: fantasy, alerts, stats, news, predictions, and private leagues. Your feedback helps decide what becomes the center of the product.
+            </p>
+            <Link href="/about" className="mt-5 inline-flex rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-stone-300 hover:bg-white/10">
+              Read the story →
+            </Link>
+          </div>
+          <FeedbackForm compact />
+        </section>
 
         <section className="mt-10">
           <MatchDayCenter matches={featuredMatches.length ? featuredMatches : matches.slice(0, 6)} />

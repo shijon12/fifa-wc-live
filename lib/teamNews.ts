@@ -64,9 +64,9 @@ export async function fetchTeamNews(team: string): Promise<TeamNewsResult> {
   if (!response.ok) throw new Error('News provider unavailable.');
 
   const xml = await response.text();
-  const items = dedupeNews(parseRssItems(xml))
+  const items = sortLatest(dedupeNews(parseRssItems(xml))
     .filter((item) => isRecent(item.publishedAt, 30))
-    .filter((item) => credibleSource(item.source))
+    .filter((item) => credibleSource(item.source)))
     .slice(0, 12)
     .map((item) => ({ ...item, sentiment: scoreSentiment(item.title) }));
   const positive = items.filter((item) => item.sentiment === 'positive').length;
@@ -101,9 +101,9 @@ export async function fetchRecentFootballNews(): Promise<TeamNewsItem[]> {
   });
   if (!response.ok) return [];
   const xml = await response.text();
-  return dedupeNews(parseRssItems(xml))
+  return sortLatest(dedupeNews(parseRssItems(xml))
     .filter((item) => isRecent(item.publishedAt, 30))
-    .filter((item) => credibleSource(item.source))
+    .filter((item) => credibleSource(item.source)))
     .slice(0, 6)
     .map((item) => ({ ...item, sentiment: scoreSentiment(item.title) }));
 }
@@ -126,7 +126,7 @@ async function fetchConfiguredNewsProvider(team: string): Promise<TeamNewsResult
     const payload = await response.json() as {
       articles?: Array<{ title?: string; url?: string; source?: { name?: string }; publishedAt?: string }>;
     };
-    const items = (payload.articles ?? []).flatMap((article) => {
+    const items = sortLatest((payload.articles ?? []).flatMap((article) => {
       if (!article.title || !article.url || !article.publishedAt) return [];
       return [{
         title: article.title,
@@ -135,7 +135,7 @@ async function fetchConfiguredNewsProvider(team: string): Promise<TeamNewsResult
         publishedAt: article.publishedAt,
         sentiment: scoreSentiment(article.title),
       }];
-    }).slice(0, 12);
+    })).slice(0, 12);
     const positive = items.filter((item) => item.sentiment === 'positive').length;
     const negative = items.filter((item) => item.sentiment === 'negative').length;
     const neutral = items.length - positive - negative;
@@ -201,6 +201,10 @@ function dedupeNews(items: TeamNewsItem[]) {
     seen.add(key);
     return true;
   });
+}
+
+function sortLatest(items: TeamNewsItem[]) {
+  return [...items].sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 }
 
 function scoreSentiment(title: string): TeamNewsItem['sentiment'] {
