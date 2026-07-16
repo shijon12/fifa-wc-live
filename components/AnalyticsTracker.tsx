@@ -39,10 +39,10 @@ function track(eventName: string, path: string, feature: string, metadata: Recor
     metadata,
   });
   if (navigator.sendBeacon) {
-    navigator.sendBeacon('/api/growth/analytics', new Blob([payload], { type: 'application/json' }));
+    navigator.sendBeacon('/api/signals/analytics', new Blob([payload], { type: 'application/json' }));
     return;
   }
-  fetch('/api/growth/analytics', {
+  fetch('/api/signals/analytics', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: payload,

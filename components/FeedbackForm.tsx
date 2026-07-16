@@ -22,7 +22,7 @@ export function FeedbackForm({ compact = false }: { compact?: boolean }) {
     setMessage('');
     const form = new FormData(event.currentTarget);
     try {
-      const response = await fetch('/api/growth/feedback', {
+      const response = await fetch('/api/signals/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
