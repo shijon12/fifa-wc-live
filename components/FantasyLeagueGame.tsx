@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { LeagueMatch } from '@/lib/leagueData';
 
 type PickChoice = 'home' | 'draw' | 'away';
@@ -27,6 +27,8 @@ export function FantasyLeagueGame({ matches }: { matches: LeagueMatch[] }) {
   const [{ managerName, picks }, setFantasyState] = useState(readSavedState);
   const [syncStatus, setSyncStatus] = useState<'loading' | 'saved' | 'saving' | 'offline'>('loading');
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
+  const loadedAccountRef = useRef(false);
+  const lastSavedSnapshotRef = useRef('');
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ managerName, picks }));
@@ -43,9 +45,16 @@ export function FantasyLeagueGame({ matches }: { matches: LeagueMatch[] }) {
         if (!active) return;
         if (profileResponse.ok) {
           const data = await profileResponse.json() as { fantasy?: FantasyState };
-          if (data.fantasy) setFantasyState(data.fantasy);
+          if (data.fantasy) {
+            setFantasyState(data.fantasy);
+            lastSavedSnapshotRef.current = JSON.stringify(data.fantasy);
+          } else {
+            lastSavedSnapshotRef.current = JSON.stringify(DEFAULT_STATE);
+          }
+          loadedAccountRef.current = true;
           setSyncStatus('saved');
         } else {
+          loadedAccountRef.current = true;
           setSyncStatus('offline');
         }
         if (leaderboardResponse.ok) {
@@ -53,7 +62,10 @@ export function FantasyLeagueGame({ matches }: { matches: LeagueMatch[] }) {
           setLeaderboard(data.leaderboard ?? []);
         }
       } catch {
-        if (active) setSyncStatus('offline');
+        if (active) {
+          loadedAccountRef.current = true;
+          setSyncStatus('offline');
+        }
       }
     }
     loadFantasy();
@@ -61,7 +73,9 @@ export function FantasyLeagueGame({ matches }: { matches: LeagueMatch[] }) {
   }, []);
 
   useEffect(() => {
-    if (syncStatus === 'loading') return;
+    if (!loadedAccountRef.current) return;
+    const snapshot = JSON.stringify({ managerName, picks });
+    if (snapshot === lastSavedSnapshotRef.current) return;
     const timeout = window.setTimeout(async () => {
       setSyncStatus('saving');
       try {
@@ -70,13 +84,18 @@ export function FantasyLeagueGame({ matches }: { matches: LeagueMatch[] }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ managerName, picks }),
         });
-        setSyncStatus(response.ok ? 'saved' : 'offline');
+        if (response.ok) {
+          lastSavedSnapshotRef.current = snapshot;
+          setSyncStatus('saved');
+        } else {
+          setSyncStatus('offline');
+        }
       } catch {
         setSyncStatus('offline');
       }
     }, 500);
     return () => window.clearTimeout(timeout);
-  }, [managerName, picks, syncStatus]);
+  }, [managerName, picks]);
 
   const settled = useMemo(() => matches.filter((match) => match.state === 'post' && match.homeScore !== null && match.awayScore !== null), [matches]);
   const score = settled.reduce((total, match) => total + scorePick(match, picks[match.id]), 0);
