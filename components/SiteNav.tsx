@@ -6,6 +6,8 @@ const links = [
   { href: '/#bracket', label: 'Bracket' },
   { href: '/statistics', label: 'Stats' },
   { href: '/favorites', label: 'Favorites' },
+  { href: '/leagues', label: 'Leagues' },
+  { href: '/fantasy', label: 'Fantasy' },
   { href: '/compare', label: 'Compare' },
   { href: '/predictions', label: 'Predictions' },
 ];
@@ -20,7 +22,7 @@ export function SiteNav() {
           <span className="block text-[10px] uppercase tracking-[0.28em] text-stone-500">Live tracker</span>
         </span>
       </Link>
-      <div className="grid w-full min-w-0 grid-cols-4 gap-1 sm:flex sm:w-auto sm:max-w-[68vw] sm:items-center sm:gap-2 sm:overflow-x-auto">
+      <div className="grid w-full min-w-0 grid-cols-4 gap-1 sm:flex sm:w-auto sm:max-w-[72vw] sm:items-center sm:gap-2 sm:overflow-x-auto">
         {links.map((link) => (
           <Link
             key={link.href}
