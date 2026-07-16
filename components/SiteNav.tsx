@@ -10,6 +10,7 @@ const links = [
   { href: '/fantasy', label: 'Fantasy' },
   { href: '/compare', label: 'Compare' },
   { href: '/predictions', label: 'Predictions' },
+  { href: '/account', label: 'Account' },
 ];
 
 export function SiteNav() {

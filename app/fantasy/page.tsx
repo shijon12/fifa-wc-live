@@ -1,11 +1,16 @@
+import { redirect } from 'next/navigation';
 import { FantasyLeagueGame } from '@/components/FantasyLeagueGame';
 import { SiteNav } from '@/components/SiteNav';
+import { getCurrentUser } from '@/lib/auth';
 import { fetchAllLeagueMatches, type LeagueMatch } from '@/lib/leagueData';
 import { fetchWorldCupMatches, type LiveMatch } from '@/lib/liveData';
 
 export const dynamic = 'force-dynamic';
 
 export default async function FantasyPage() {
+  const user = await getCurrentUser();
+  if (!user) redirect('/sign-in?next=/fantasy');
+
   const [worldCupMatches, leagueBundles] = await Promise.all([
     fetchWorldCupMatches(),
     fetchAllLeagueMatches(),

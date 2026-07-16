@@ -37,7 +37,7 @@ A responsive FIFA World Cup 2026 tracker built with Next.js. It presents near-re
 | Hosting | Vercel |
 | Persistence | Browser `localStorage` and `sessionStorage` |
 
-Supabase stores anonymous Web Push subscriptions and notification delivery state. Favorites and predictions remain device-local, and the application does not currently have user authentication.
+Supabase stores anonymous Web Push subscriptions, notification delivery state, and application user accounts for protected fantasy features.
 
 ## Quick start
 
@@ -71,8 +71,9 @@ Football data works without environment variables. Leave `OPENAI_API_KEY` empty 
 | `OPENAI_API_KEY` | Only for AI | Server-side OpenAI API key |
 | `OPENAI_MODEL` | No | Model override; defaults to `gpt-5.4-mini` |
 | `AI_ACCESS_CODE` | Required for production AI | A separate shared password that protects paid AI endpoints |
-| `SUPABASE_URL` | For push | Supabase project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | For push | Server-only database key |
+| `AUTH_SECRET` | Required for production auth | Long random value used to sign HTTP-only auth sessions |
+| `SUPABASE_URL` | For push/auth | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | For push/auth | Server-only database key |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | For push | Public Web Push application key |
 | `VAPID_PRIVATE_KEY` | For push | Server-only Web Push signing key |
 | `VAPID_SUBJECT` | For push | Contact URL or `mailto:` address |
