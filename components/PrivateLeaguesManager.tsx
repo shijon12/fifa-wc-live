@@ -124,7 +124,7 @@ export function PrivateLeaguesManager() {
       <section className="rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.06] p-5">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300">How private leagues work</p>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-emerald-50/75">
-          Best used with friends: create a room, invite 3–5 people, and test it during a real matchday so the table has something to come alive around.
+          Best used with friends: create a room, invite 3–5 people, and test it during a real matchday.
         </p>
         <div className="mt-4 grid gap-3 md:grid-cols-4">
           <HowItWorksStep step="1" title="Create a room" body="Give your group a league name. The app creates a private join code." />
