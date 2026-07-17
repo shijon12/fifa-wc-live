@@ -62,7 +62,7 @@ Scores can be `null` when not reported.
 ### Example
 
 ```bash
-curl https://fifa-wc-live.vercel.app/api/live-snapshot
+curl https://the-matchroom.vercel.app/api/live-snapshot
 ```
 
 ### Status codes
@@ -119,7 +119,7 @@ No request body is required.
 ```bash
 curl -X POST \
   -H "x-ai-access-code: YOUR_CODE" \
-  https://fifa-wc-live.vercel.app/api/predictions/MATCH_ID
+  https://the-matchroom.vercel.app/api/predictions/MATCH_ID
 ```
 
 ### Success response
@@ -189,7 +189,7 @@ curl -X POST \
   -H "Content-Type: application/json" \
   -H "x-ai-access-code: YOUR_CODE" \
   -d "{\"teamAId\":\"203\",\"teamBId\":\"467\"}" \
-  https://fifa-wc-live.vercel.app/api/compare
+  https://the-matchroom.vercel.app/api/compare
 ```
 
 ### Success response

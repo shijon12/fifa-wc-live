@@ -6,7 +6,7 @@ create extension if not exists pg_net;
 create extension if not exists supabase_vault;
 
 select vault.create_secret(
-  'https://fifa-wc-live.vercel.app/api/push/check',
+  'https://the-matchroom.vercel.app/api/push/check',
   'world_cup_push_check_url',
   'Production push-check endpoint'
 );

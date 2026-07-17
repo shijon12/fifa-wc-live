@@ -2,7 +2,7 @@
 
 A responsive FIFA World Cup 2026 tracker built with Next.js. It presents near-real-time fixtures, results, standings, match events, commentary, player statistics, favorites, browser alerts, team comparisons, and optional OpenAI forecasts.
 
-**Live application:** [fifa-wc-live.vercel.app](https://fifa-wc-live.vercel.app)
+**Live application:** [the-matchroom.vercel.app](https://the-matchroom.vercel.app)
 
 > This is an independent portfolio project. It is not affiliated with or endorsed by FIFA, ESPN, TheSportsDB, or OpenAI.
 
