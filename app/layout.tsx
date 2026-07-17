@@ -4,6 +4,7 @@ import './globals.css';
 import { AnalyticsTracker } from '@/components/AnalyticsTracker';
 import { LiveRefresh } from '@/components/LiveRefresh';
 import { NotificationEngine } from '@/components/NotificationEngine';
+import { SessionTimeoutGuard } from '@/components/SessionTimeoutGuard';
 
 export const metadata: Metadata = {
   title: 'The Matchroom',
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Suspense>
         <LiveRefresh />
         <NotificationEngine />
+        <SessionTimeoutGuard />
         {children}
       </body>
     </html>

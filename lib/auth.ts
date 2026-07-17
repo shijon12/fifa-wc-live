@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import crypto from 'node:crypto';
 
 const SESSION_COOKIE = 'fifa_wc_session';
-const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
+const SESSION_TTL_SECONDS = 60 * 20;
 
 export type AuthUser = {
   id: string;
@@ -224,6 +224,15 @@ export function createSessionToken(user: AuthUser) {
   const encoded = Buffer.from(JSON.stringify(payload)).toString('base64url');
   const signature = crypto.createHmac('sha256', authSecret()).update(encoded).digest('base64url');
   return `${encoded}.${signature}`;
+}
+
+export function refreshSessionToken(payload: SessionPayload) {
+  return createSessionToken({
+    id: payload.sub,
+    email: payload.email,
+    displayName: payload.displayName,
+    role: payload.role,
+  });
 }
 
 export function verifySessionToken(token: string | undefined): SessionPayload | null {
