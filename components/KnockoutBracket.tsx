@@ -28,16 +28,16 @@ export function KnockoutBracket({ matches }: { matches: LiveMatch[] }) {
       </div>
 
       {orderedStages.length ? (
-        <div className="grid gap-4 md:grid-flow-col md:auto-cols-[280px]">
+        <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {orderedStages.map(([stage, stageMatches]) => (
-              <div key={stage} className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
+              <div key={stage} className="min-w-0 rounded-3xl border border-white/10 bg-white/[0.03] p-4">
                 <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
-                  <h3 className="font-bold text-white">{stage}</h3>
-                  <span className="text-xs text-stone-600">{stageMatches.length} matches</span>
+                  <h3 className="min-w-0 truncate font-bold text-white">{stage}</h3>
+                  <span className="shrink-0 text-xs text-stone-600">{stageMatches.length} {stageMatches.length === 1 ? 'match' : 'matches'}</span>
                 </div>
-                <div className="space-y-3">
+                <div className="max-h-[680px] space-y-3 overflow-y-auto pr-1">
                   {stageMatches.map((match) => (
-                    <Link key={match.id} href={`/matches/${match.id}`} className="block rounded-xl border border-white/[0.08] bg-black/20 p-3 transition hover:border-emerald-400/30">
+                    <Link key={match.id} href={`/matches/${match.id}`} className="block rounded-2xl border border-white/[0.08] bg-black/20 p-3 transition hover:border-emerald-400/30">
                       <BracketTeam name={match.homeTeam} badge={match.homeBadge} score={match.homeScore} />
                       <BracketTeam name={match.awayTeam} badge={match.awayBadge} score={match.awayScore} />
                       <p className="mt-2 truncate border-t border-white/[0.06] pt-2 text-[10px] uppercase tracking-wider text-stone-600">
