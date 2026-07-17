@@ -8,6 +8,14 @@ const pillars = [
   ['Decision layer', 'News, stats, comparisons, and forecasts create the pre-match context fans want before kickoff.'],
 ];
 
+const dataSources = [
+  ['Live football data', 'ESPN soccer feeds power fixtures, scores, standings, teams, players, match centers, timelines, stats, and commentary where available.'],
+  ['Recent news', 'Team and football news use a configurable paid news provider when present, with Google News RSS as the fallback. Headlines are sorted newest-first.'],
+  ['Accounts and feedback', 'Supabase stores users, Google sign-in, fantasy/private-league data, feedback, waitlist interest, and anonymous product analytics.'],
+  ['Notifications', 'Browser Push API, VAPID keys, a service worker, Supabase storage, and scheduled checks power kickoff, goal, and full-time alerts.'],
+  ['AI forecasts', 'The prediction layer is built around the OpenAI Responses API, but the live AI forecast feature remains gated until API credits are enabled.'],
+];
+
 export default function AboutPage() {
   return (
     <main className="min-h-screen bg-[#07120d] text-stone-100">
@@ -21,6 +29,9 @@ export default function AboutPage() {
           </h1>
           <p className="mt-5 max-w-3xl text-lg leading-8 text-stone-300">
             The Matchroom is being built as a one-stop companion for football supporters: live scores, major leagues, fantasy, private groups, team alerts, player stats, recent news, and prediction context in one calm place.
+          </p>
+          <p className="mt-5 max-w-3xl rounded-2xl border border-amber-300/20 bg-amber-300/10 p-4 text-sm leading-6 text-amber-100">
+            Early beta note: live data can occasionally lag, be incomplete, or vary by provider coverage. The product is actively learning from real fan usage and feedback.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Link href="/leagues" className="rounded-full bg-emerald-400 px-5 py-3 font-black text-[#07120d] hover:bg-emerald-300">
@@ -41,7 +52,7 @@ export default function AboutPage() {
           ))}
         </section>
 
-        <section className="mt-8 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+        <section id="feedback" className="mt-8 grid scroll-mt-8 gap-5 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="rounded-[2rem] border border-white/10 bg-white/[0.035] p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.26em] text-sky-300">Why now</p>
             <h2 className="mt-3 text-3xl font-black text-white">Football attention is fragmented.</h2>
@@ -50,6 +61,22 @@ export default function AboutPage() {
             </p>
           </div>
           <FeedbackForm />
+        </section>
+
+        <section className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.035] p-6 sm:p-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.26em] text-emerald-300">Data and trust</p>
+          <h2 className="mt-3 text-3xl font-black text-white">What powers The Matchroom</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-stone-400">
+            The goal is to be useful and transparent. The Matchroom combines live sports feeds, fan preferences, browser notifications, and product analytics so we can learn what fans actually value.
+          </p>
+          <div className="mt-6 grid gap-3 md:grid-cols-2">
+            {dataSources.map(([title, body]) => (
+              <article key={title} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <h3 className="font-black text-white">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-stone-400">{body}</p>
+              </article>
+            ))}
+          </div>
         </section>
       </div>
     </main>

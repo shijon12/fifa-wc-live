@@ -29,7 +29,7 @@ export default async function HomePage() {
         <section className="mt-6 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="rounded-[2rem] border border-white/10 bg-[#0b1b13] p-6 shadow-2xl shadow-black/25 sm:p-10 lg:p-12">
             <p className="inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-emerald-300">
-              Live football, fantasy, alerts
+              Early beta · live football, fantasy, alerts
             </p>
             <p className="mt-8 text-xs font-medium uppercase tracking-[0.28em] text-stone-500">Scores • fantasy • news • communities</p>
             <h1 className="mt-3 max-w-4xl text-5xl font-black leading-[0.92] tracking-[-0.06em] text-white sm:text-7xl lg:text-8xl">
@@ -39,12 +39,18 @@ export default async function HomePage() {
             <p className="mt-6 max-w-2xl text-base leading-7 text-stone-300 sm:text-lg">
               A social football hub where fans follow live matches, build fantasy squads, join private leagues, track favorite teams, and read recent football news before kickoff.
             </p>
+            <p className="mt-4 max-w-2xl rounded-2xl border border-amber-300/20 bg-amber-300/10 p-3 text-sm leading-6 text-amber-100">
+              The Matchroom is in early beta. Live data can occasionally lag or differ based on provider availability.
+            </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/fantasy" className="rounded-full bg-emerald-400 px-5 py-3 text-sm font-black text-[#07120d] transition hover:bg-emerald-300">
                 Build your squad
               </Link>
               <Link href="/leagues" className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
                 Explore live football
+              </Link>
+              <Link href="/about#feedback" className="rounded-full border border-amber-300/20 bg-amber-300/10 px-5 py-3 text-sm font-semibold text-amber-100 transition hover:bg-amber-300/20">
+                Help shape it
               </Link>
             </div>
           </div>
@@ -91,8 +97,8 @@ export default async function HomePage() {
             <p className="mt-4 text-sm leading-7 text-stone-400">
               The Matchroom is tracking what fans actually use: fantasy, alerts, stats, news, predictions, and private leagues. Your feedback helps decide what becomes the center of the product.
             </p>
-            <Link href="/about" className="mt-5 inline-flex rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-stone-300 hover:bg-white/10">
-              Read the story →
+            <Link href="/about#feedback" className="mt-5 inline-flex rounded-full border border-amber-300/20 bg-amber-300/10 px-4 py-2 text-sm font-semibold text-amber-100 hover:bg-amber-300/20">
+              Tell us what to build next →
             </Link>
           </div>
           <FeedbackForm compact />

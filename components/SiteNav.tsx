@@ -10,6 +10,7 @@ const primaryLinks = [
 const secondaryLinks = [
   { href: '/leagues', label: 'Leagues' },
   { href: '/about', label: 'About' },
+  { href: '/about#feedback', label: 'Feedback' },
   { href: '/favorites', label: 'My Teams' },
   { href: '/compare', label: 'Compare' },
   { href: '/account', label: 'Account' },
@@ -22,7 +23,10 @@ export function SiteNav() {
         <Link href="/" className="flex min-w-0 items-center gap-3">
           <span className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-400 font-black text-[#07120d]">TM</span>
           <span className="min-w-0">
-            <span className="block text-sm font-black uppercase tracking-[0.16em] text-white">The Matchroom</span>
+            <span className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.16em] text-white">
+              The Matchroom
+              <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-[9px] tracking-[0.18em] text-emerald-300">Beta</span>
+            </span>
             <span className="block text-[10px] uppercase tracking-[0.26em] text-stone-500">Live football hub</span>
           </span>
         </Link>
