@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { OnboardingChecklist } from '@/components/OnboardingChecklist';
 import { ReportIssueForm } from '@/components/ReportIssueForm';
 import { SignOutButton } from '@/components/SignOutButton';
 import { SiteNav } from '@/components/SiteNav';
@@ -36,6 +37,7 @@ export default async function AccountPage() {
             <SignOutButton />
           </div>
         </section>
+        <OnboardingChecklist />
         <ReportIssueForm />
       </div>
     </main>

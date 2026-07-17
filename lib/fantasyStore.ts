@@ -118,6 +118,14 @@ export async function listFantasyProfilesForLeaderboard() {
   }
 }
 
+export async function listPrivateLeagueMemberIds(user: AuthUser, leagueId: string): Promise<string[]> {
+  if (!/^[a-f\d-]{36}$/i.test(leagueId)) throw new Error('Invalid private league.');
+  const requesterMembership = await supabaseRest<LeagueMemberRow[]>(`private_league_members?league_id=eq.${encodeURIComponent(leagueId)}&user_id=eq.${encodeURIComponent(user.id)}&select=*`);
+  if (!requesterMembership.length) throw new Error('You are not a member of this private league.');
+  const members = await supabaseRest<LeagueMemberRow[]>(`private_league_members?league_id=eq.${encodeURIComponent(leagueId)}&select=*&order=joined_at.asc`);
+  return members.map((member) => member.user_id);
+}
+
 export async function createPrivateLeague(user: AuthUser, name: string): Promise<PrivateLeague> {
   const joinCode = crypto.randomBytes(4).toString('hex').toUpperCase();
   const rows = await supabaseRest<LeagueRow[]>('private_leagues', {

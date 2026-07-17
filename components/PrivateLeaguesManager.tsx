@@ -18,6 +18,16 @@ type PrivateLeague = {
   createdAt: string;
 };
 
+type LeaderboardRow = {
+  userId: string;
+  managerName: string;
+  totalScore?: number;
+  score: number;
+  squadScore?: number;
+  picks: number;
+  squadPlayers?: number;
+};
+
 export function PrivateLeaguesManager() {
   const [leagues, setLeagues] = useState<PrivateLeague[]>([]);
   const [configured, setConfigured] = useState(true);
@@ -26,12 +36,29 @@ export function PrivateLeaguesManager() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState('');
   const [loading, setLoading] = useState(false);
+  const [leagueLeaderboards, setLeagueLeaderboards] = useState<Record<string, LeaderboardRow[]>>({});
 
   async function load() {
     const response = await fetch('/api/fantasy/private-leagues');
     const data = await response.json() as { leagues?: PrivateLeague[]; configured?: boolean };
-    setLeagues(data.leagues ?? []);
+    const nextLeagues = data.leagues ?? [];
+    setLeagues(nextLeagues);
     setConfigured(data.configured !== false);
+    if (nextLeagues.length) {
+      const entries = await Promise.all(nextLeagues.map(async (league) => {
+        try {
+          const leaderboardResponse = await fetch(`/api/fantasy/leaderboard?leagueId=${encodeURIComponent(league.id)}`);
+          if (!leaderboardResponse.ok) return [league.id, []] as const;
+          const leaderboardData = await leaderboardResponse.json() as { leaderboard?: LeaderboardRow[] };
+          return [league.id, leaderboardData.leaderboard ?? []] as const;
+        } catch {
+          return [league.id, []] as const;
+        }
+      }));
+      setLeagueLeaderboards(Object.fromEntries(entries));
+    } else {
+      setLeagueLeaderboards({});
+    }
   }
 
   useEffect(() => {
@@ -165,6 +192,7 @@ export function PrivateLeaguesManager() {
                   </Link>
                 </div>
               </div>
+              <RoomLeaderboard rows={leagueLeaderboards[league.id] ?? []} memberCount={league.members} />
             </div>
           )) : (
             <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-5">
@@ -174,6 +202,41 @@ export function PrivateLeaguesManager() {
           )}
         </div>
       </section>
+    </div>
+  );
+}
+
+function RoomLeaderboard({ rows, memberCount }: { rows: LeaderboardRow[]; memberCount: number }) {
+  return (
+    <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">Room leaderboard</p>
+          <p className="mt-1 text-xs text-stone-500">Only members of this private league appear here.</p>
+        </div>
+        <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-bold text-stone-400">
+          {rows.length || 0}/{memberCount} active
+        </span>
+      </div>
+      <div className="mt-3 space-y-2">
+        {rows.length ? rows.slice(0, 5).map((row, index) => (
+          <div key={row.userId} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-emerald-400/15 text-xs font-black text-emerald-200">{index + 1}</span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-white">{row.managerName}</p>
+              <p className="text-[11px] text-stone-500">{row.squadPlayers ?? 0} squad players · {row.picks} picks</p>
+            </div>
+            <span className="text-lg font-black tabular-nums text-emerald-300">{row.totalScore ?? row.score}</span>
+          </div>
+        )) : (
+          <div className="rounded-xl border border-amber-300/20 bg-amber-300/10 p-3">
+            <p className="font-bold text-amber-100">No scores in this room yet.</p>
+            <p className="mt-1 text-sm leading-5 text-amber-100/75">
+              Once members save a squad or make predictions, this becomes the room scoreboard.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
