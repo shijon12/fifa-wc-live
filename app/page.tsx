@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { FantasyLeagueSimulation } from '@/components/FantasyLeagueSimulation';
 import { FeedbackForm } from '@/components/FeedbackForm';
 import { KnockoutBracket } from '@/components/KnockoutBracket';
 import { MatchDayCenter } from '@/components/MatchDayCenter';
@@ -106,26 +107,7 @@ export default async function HomePage() {
           />
         </section>
 
-        <section className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/[0.035] p-5 sm:mt-10 sm:rounded-[2rem] sm:p-7">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-300">60-second demo</p>
-              <h2 className="mt-2 text-3xl font-black text-white">From group chat to matchroom before kickoff.</h2>
-              <p className="mt-3 max-w-3xl text-sm leading-7 text-stone-400">
-                The core loop is intentionally simple: create a private room, invite friends, make your picks, then watch the table move as matchday unfolds.
-              </p>
-            </div>
-            <Link href="/fantasy/leagues" className="rounded-full bg-emerald-400 px-5 py-3 text-sm font-black text-[#07120d] hover:bg-emerald-300">
-              Try the loop
-            </Link>
-          </div>
-          <div className="mt-6 grid gap-3 md:grid-cols-4">
-            <DemoStep number="01" title="Create room" body="Name the group and get a private invite code." />
-            <DemoStep number="02" title="Invite friends" body="Share one link in WhatsApp, Slack, LinkedIn, or chat." />
-            <DemoStep number="03" title="Make picks" body="Build squads, choose captains, and predict match results." />
-            <DemoStep number="04" title="Compete live" body="Use the room leaderboard as the matchday scoreboard." />
-          </div>
-        </section>
+        <FantasyLeagueSimulation />
 
         <section className="mt-6 grid gap-3 sm:mt-10 md:grid-cols-2 xl:grid-cols-4">
           <FeatureCard href="/statistics" eyebrow="Stats" title="Understand the game" body="Player leaders, team tables, live form, and league-by-league analytics in one place." />
@@ -239,16 +221,6 @@ function StartCard({ href, eyebrow, title, body }: { href: string; eyebrow: stri
       <p className="mt-2 text-sm leading-6 text-stone-500">{body}</p>
       <span className="mt-4 inline-flex text-sm font-semibold text-emerald-300 transition group-hover:translate-x-1">Open →</span>
     </Link>
-  );
-}
-
-function DemoStep({ number, title, body }: { number: string; title: string; body: string }) {
-  return (
-    <article className="rounded-2xl border border-white/10 bg-black/20 p-4">
-      <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-300">{number}</p>
-      <h3 className="mt-3 text-lg font-black text-white">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-stone-500">{body}</p>
-    </article>
   );
 }
 
