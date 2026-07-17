@@ -73,6 +73,12 @@ export function FavoritesDashboard({ teams }: { teams: FavoriteTeam[] }) {
             {notificationLabel(notificationStatus)}
           </button>
         </div>
+        <div className="mt-4 rounded-2xl border border-sky-300/20 bg-sky-300/10 p-4">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-200">Beta note</p>
+          <p className="mt-1 text-sm leading-6 text-sky-100/80">
+            Alerts are optional and depend on browser permission, device support, and OS notification settings. Delivery can vary by browser, especially on mobile.
+          </p>
+        </div>
         {notificationError && <p role="alert" className="mt-4 rounded-xl border border-rose-400/20 bg-rose-400/10 p-3 text-sm text-rose-200">{notificationError}</p>}
         {notificationStatus === 'blocked' && (
           <p className="mt-4 rounded-xl border border-amber-300/20 bg-amber-300/10 p-3 text-sm leading-6 text-amber-100">
