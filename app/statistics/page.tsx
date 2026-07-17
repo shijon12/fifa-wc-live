@@ -118,8 +118,30 @@ function LeagueStatisticsPage({ selectedLeague, stats }: { selectedLeague: Suppo
 
 function StandingsTable({ stats }: { stats: LeagueStats }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[720px] text-sm">
+    <>
+      <div className="grid gap-3 p-4 md:hidden">
+        {stats.standings.map((team) => (
+          <article key={`mobile-${team.group ?? 'league'}-${team.teamId}`} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <div className="flex items-center gap-3">
+              <span className="w-6 text-sm font-black text-stone-600">{team.rank === 999 ? '–' : team.rank}</span>
+              {team.badge && <span className="h-8 w-8 shrink-0 bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url("${team.badge}")` }} />}
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-black text-white">{team.team}</p>
+                {team.group && <p className="text-xs text-stone-500">{team.group}</p>}
+              </div>
+              <span className="text-2xl font-black text-white">{team.points}</span>
+            </div>
+            <div className="mt-4 grid grid-cols-4 gap-2 text-center text-xs">
+              <MobileStat label="P" value={team.played} />
+              <MobileStat label="W" value={team.won} />
+              <MobileStat label="GD" value={`${team.goalDifference > 0 ? '+' : ''}${team.goalDifference}`} />
+              <MobileStat label="GF" value={team.goalsFor} />
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="hidden md:block">
+      <table className="w-full text-sm">
         <thead className="text-xs uppercase tracking-wider text-stone-500">
           <tr>
             <th className="px-4 py-3 text-left">#</th>
@@ -157,20 +179,25 @@ function StandingsTable({ stats }: { stats: LeagueStats }) {
           ))}
         </tbody>
       </table>
-    </div>
+      </div>
+    </>
   );
+}
+
+function MobileStat({ label, value }: { label: string; value: number | string }) {
+  return <div className="rounded-xl border border-white/10 bg-white/[0.035] p-2"><p className="font-black text-white">{value}</p><p className="mt-0.5 text-[10px] uppercase tracking-wider text-stone-500">{label}</p></div>;
 }
 
 function LeagueStatPicker({ selectedLeague }: { selectedLeague: SupportedLeague }) {
   return (
     <section className="mt-5 rounded-3xl border border-white/10 bg-white/[0.035] p-5">
       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">Select stats view</p>
-      <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
         {supportedLeagues.map((league) => (
           <Link
             key={league.id}
             href={`/statistics?league=${league.id}`}
-            className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${league.id === selectedLeague.id ? 'border-emerald-300 bg-emerald-300 text-[#07120d]' : 'border-white/10 bg-black/20 text-stone-300 hover:border-emerald-400/40 hover:text-white'}`}
+            className={`rounded-full border px-3 py-2 text-center text-sm font-semibold transition ${league.id === selectedLeague.id ? 'border-emerald-300 bg-emerald-300 text-[#07120d]' : 'border-white/10 bg-black/20 text-stone-300 hover:border-emerald-400/40 hover:text-white'}`}
           >
             {league.shortLabel}
           </Link>

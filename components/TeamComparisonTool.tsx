@@ -55,9 +55,9 @@ export function TeamComparisonTool({ teams }: { teams: ComparisonTeam[] }) {
       </section>
       {teamA && teamB && teamA.id !== teamB.id && (
         <section className="mt-6 rounded-[2rem] border border-white/10 bg-white/[0.035] p-5 sm:p-8">
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+          <div className="grid gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
             <TeamHeader team={teamA} />
-            <span className="text-sm font-black text-stone-600">VS</span>
+            <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-center text-sm font-black text-stone-500 sm:border-0 sm:bg-transparent sm:p-0 sm:text-stone-600">VS</span>
             <TeamHeader team={teamB} reverse />
           </div>
           <div className="mx-auto mt-10 max-w-3xl space-y-5">
@@ -92,7 +92,7 @@ function TeamSelect({ label, value, onChange, teams, excluded }: { label: string
 }
 
 function TeamHeader({ team, reverse = false }: { team: ComparisonTeam; reverse?: boolean }) {
-  return <div className={`flex min-w-0 items-center gap-3 ${reverse ? 'flex-row-reverse text-right' : ''}`}>{team.logo && <span className="h-14 w-14 shrink-0 bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url("${team.logo}")` }} />}<div className="min-w-0"><h2 className="truncate text-xl font-black text-white sm:text-3xl">{team.name}</h2><p className="text-xs text-stone-500">Group {team.group} · #{team.rank}</p></div></div>;
+  return <div className={`flex min-w-0 items-center gap-3 ${reverse ? 'sm:flex-row-reverse sm:text-right' : ''}`}>{team.logo && <span className="h-11 w-11 shrink-0 bg-contain bg-center bg-no-repeat sm:h-14 sm:w-14" style={{ backgroundImage: `url("${team.logo}")` }} />}<div className="min-w-0"><h2 className="truncate text-lg font-black text-white sm:text-3xl">{team.name}</h2><p className="text-xs text-stone-500">Group {team.group} · #{team.rank}</p></div></div>;
 }
 
 function ComparisonRow({ label, a, b, lowerWins = false }: { label: string; a: number; b: number; lowerWins?: boolean }) {

@@ -32,8 +32,29 @@ export default async function GroupPage({ params }: { params: Promise<{ group: s
         </header>
 
         <section className="mt-6 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035]">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px]">
+          <div className="grid gap-3 p-4 md:hidden">
+            {standings.map((team) => (
+              <article key={`mobile-${team.teamId}`} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <Link href={`/teams/${team.teamId}`} className="flex items-center gap-3">
+                  <span className="w-5 text-sm font-black text-stone-600">{team.rank}</span>
+                  <TeamBadge name={team.team} badge={team.badge} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-black text-white">{team.team}</p>
+                    {team.qualification && <p className="text-xs text-emerald-300">{team.qualification}</p>}
+                  </div>
+                  <span className="text-2xl font-black text-white">{team.points}</span>
+                </Link>
+                <div className="mt-4 grid grid-cols-4 gap-2 text-center text-xs">
+                  <MobileCell label="P" value={team.played} />
+                  <MobileCell label="W" value={team.won} />
+                  <MobileCell label="GD" value={team.goalDifference > 0 ? `+${team.goalDifference}` : team.goalDifference} />
+                  <MobileCell label="GF" value={team.goalsFor} />
+                </div>
+              </article>
+            ))}
+          </div>
+          <div className="hidden md:block">
+            <table className="w-full">
               <thead className="border-b border-white/10 text-xs uppercase tracking-wider text-stone-500">
                 <tr>
                   <th className="px-6 py-4 text-left">Team</th>
@@ -98,6 +119,10 @@ export default async function GroupPage({ params }: { params: Promise<{ group: s
 
 function Cell({ children }: { children: React.ReactNode }) {
   return <td className="px-3 py-5 text-center text-stone-300">{children}</td>;
+}
+
+function MobileCell({ label, value }: { label: string; value: number | string }) {
+  return <div className="rounded-xl border border-white/10 bg-white/[0.035] p-2"><p className="font-black text-white">{value}</p><p className="mt-0.5 text-[10px] uppercase tracking-wider text-stone-500">{label}</p></div>;
 }
 
 function TeamBadge({ name, badge }: { name: string; badge: string | null }) {

@@ -28,8 +28,7 @@ export function KnockoutBracket({ matches }: { matches: LiveMatch[] }) {
       </div>
 
       {orderedStages.length ? (
-        <div className="overflow-x-auto pb-4">
-          <div className="grid min-w-max grid-flow-col auto-cols-[280px] gap-4">
+        <div className="grid gap-4 md:grid-flow-col md:auto-cols-[280px]">
             {orderedStages.map(([stage, stageMatches]) => (
               <div key={stage} className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
                 <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
@@ -49,7 +48,6 @@ export function KnockoutBracket({ matches }: { matches: LiveMatch[] }) {
                 </div>
               </div>
             ))}
-          </div>
         </div>
       ) : (
         <p className="rounded-2xl border border-white/10 bg-white/[0.035] p-6 text-stone-400">

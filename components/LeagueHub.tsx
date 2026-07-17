@@ -40,12 +40,12 @@ export function LeagueHub({ leagues, selectedLeague, matches }: { leagues: Suppo
           {Object.entries(grouped).map(([group, groupLeagues]) => (
             <div key={group}>
               <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-stone-500">{group}</h2>
-              <div className="mt-3 flex gap-2 overflow-x-auto pb-2">
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                 {groupLeagues.map((league) => (
                   <Link
                     key={league.id}
                     href={`/leagues?league=${league.id}`}
-                    className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${league.id === selectedLeague.id ? 'border-emerald-300 bg-emerald-300 text-[#07120d]' : 'border-white/10 bg-black/20 text-stone-300 hover:border-emerald-400/40 hover:text-white'}`}
+                    className={`rounded-full border px-3 py-2 text-center text-sm font-semibold transition ${league.id === selectedLeague.id ? 'border-emerald-300 bg-emerald-300 text-[#07120d]' : 'border-white/10 bg-black/20 text-stone-300 hover:border-emerald-400/40 hover:text-white'}`}
                   >
                     {league.shortLabel}
                   </Link>

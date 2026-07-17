@@ -59,13 +59,13 @@ export function TeamNewsSentiment({ teams }: { teams: string[] }) {
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-300">Team news</p>
           <h2 className="mt-2 text-3xl font-bold tracking-tight text-white">Recent news</h2>
         </div>
-        <div className="flex max-w-full gap-1 overflow-x-auto rounded-full border border-white/10 bg-black/20 p-1">
+        <div className="grid w-full grid-cols-2 gap-1 rounded-2xl border border-white/10 bg-black/20 p-1 sm:w-auto sm:flex sm:flex-wrap sm:rounded-full">
           {teams.map((team) => (
             <button
               key={team}
               type="button"
               onClick={() => setSelectedTeam(team)}
-              className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${selectedTeam === team ? 'bg-sky-300 text-[#07120d]' : 'text-stone-300 hover:bg-white/10'}`}
+              className={`rounded-full px-3 py-2 text-sm font-semibold transition ${selectedTeam === team ? 'bg-sky-300 text-[#07120d]' : 'text-stone-300 hover:bg-white/10'}`}
             >
               {team}
             </button>
