@@ -32,6 +32,14 @@ video {
   max-width: 100%;
 }
 
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 ::selection {
   background: rgba(52, 211, 153, 0.3);
   color: white;

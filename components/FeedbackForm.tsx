@@ -47,7 +47,7 @@ export function FeedbackForm({ compact = false }: { compact?: boolean }) {
   }
 
   return (
-    <form onSubmit={submit} className={`rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 ${compact ? '' : 'sm:p-7'}`}>
+    <form onSubmit={submit} className={`rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5 sm:rounded-[2rem] ${compact ? '' : 'sm:p-7'}`}>
       <p className="text-xs font-semibold uppercase tracking-[0.26em] text-emerald-300">Build with us</p>
       <h2 className="mt-3 text-2xl font-black text-white">{compact ? 'Join the waitlist' : 'Join the waitlist and shape what comes next'}</h2>
       <p className="mt-2 text-sm leading-6 text-stone-400">
@@ -83,7 +83,7 @@ export function FeedbackForm({ compact = false }: { compact?: boolean }) {
         </div>
       )}
 
-      <button disabled={status === 'loading'} className="mt-5 rounded-full bg-emerald-400 px-5 py-3 font-black text-[#07120d] transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60">
+      <button disabled={status === 'loading'} className="mt-5 w-full rounded-full bg-emerald-400 px-5 py-3 font-black text-[#07120d] transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
         {status === 'loading' ? 'Saving…' : 'Send feedback'}
       </button>
     </form>

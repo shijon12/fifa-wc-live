@@ -19,10 +19,10 @@ const dataSources = [
 export default function AboutPage() {
   return (
     <main className="min-h-screen bg-[#07120d] text-stone-100">
-      <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-6xl px-3 py-3 sm:px-6 sm:py-5 lg:px-10">
         <SiteNav />
 
-        <section className="mt-8 rounded-[2rem] border border-white/10 bg-[#0b1b13] p-8 sm:p-12">
+        <section className="mt-4 rounded-[1.5rem] border border-white/10 bg-[#0b1b13] p-5 sm:mt-8 sm:rounded-[2rem] sm:p-12">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-300">About The Matchroom</p>
           <h1 className="mt-3 max-w-4xl text-4xl font-black tracking-[-0.05em] text-white sm:text-6xl">
             A matchday room for fans who want the whole football picture.
@@ -33,17 +33,17 @@ export default function AboutPage() {
           <p className="mt-5 max-w-3xl rounded-2xl border border-amber-300/20 bg-amber-300/10 p-4 text-sm leading-6 text-amber-100">
             Early beta note: live data can occasionally lag, be incomplete, or vary by provider coverage. The product is actively learning from real fan usage and feedback.
           </p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Link href="/leagues" className="rounded-full bg-emerald-400 px-5 py-3 font-black text-[#07120d] hover:bg-emerald-300">
+          <div className="mt-7 grid gap-2 sm:flex sm:flex-wrap sm:gap-3">
+            <Link href="/leagues" className="rounded-full bg-emerald-400 px-5 py-3 text-center font-black text-[#07120d] hover:bg-emerald-300">
               Explore leagues
             </Link>
-            <Link href="/fantasy" className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 font-black text-white hover:bg-white/10">
+            <Link href="/fantasy" className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-center font-black text-white hover:bg-white/10">
               Try fantasy
             </Link>
           </div>
         </section>
 
-        <section className="mt-8 grid gap-4 md:grid-cols-3">
+        <section className="mt-5 grid gap-3 sm:mt-8 sm:gap-4 md:grid-cols-3">
           {pillars.map(([title, body]) => (
             <article key={title} className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
               <h2 className="text-xl font-black text-white">{title}</h2>
@@ -52,8 +52,8 @@ export default function AboutPage() {
           ))}
         </section>
 
-        <section id="feedback" className="mt-8 grid scroll-mt-8 gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.035] p-6">
+        <section id="feedback" className="mt-5 grid scroll-mt-8 gap-3 sm:mt-8 sm:gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.035] p-5 sm:rounded-[2rem] sm:p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.26em] text-sky-300">Why now</p>
             <h2 className="mt-3 text-3xl font-black text-white">Football attention is fragmented.</h2>
             <p className="mt-4 text-sm leading-7 text-stone-400">
@@ -63,7 +63,7 @@ export default function AboutPage() {
           <FeedbackForm />
         </section>
 
-        <section className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.035] p-6 sm:p-8">
+        <section className="mt-5 rounded-[1.5rem] border border-white/10 bg-white/[0.035] p-5 sm:mt-8 sm:rounded-[2rem] sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.26em] text-emerald-300">Data and trust</p>
           <h2 className="mt-3 text-3xl font-black text-white">What powers The Matchroom</h2>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-stone-400">

@@ -3,13 +3,13 @@ import type { LiveMatch } from '@/lib/liveData';
 
 export function MatchDayCenter({ matches }: { matches: LiveMatch[] }) {
   return (
-    <section id="matches" className="scroll-mt-6 rounded-[2rem] border border-white/10 bg-white/[0.035] p-5 shadow-2xl shadow-black/20 sm:p-7">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <section id="matches" className="scroll-mt-6 rounded-[1.5rem] border border-white/10 bg-white/[0.035] p-4 shadow-2xl shadow-black/20 sm:rounded-[2rem] sm:p-7">
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-3 sm:mb-6 sm:gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-400">Match center</p>
-          <h2 className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">Fixtures & results</h2>
+          <h2 className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-4xl">Fixtures & results</h2>
         </div>
-        <div className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-300">
+        <div className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300 sm:text-xs">
           Live feed • auto-refresh 15s
         </div>
       </div>
@@ -19,13 +19,13 @@ export function MatchDayCenter({ matches }: { matches: LiveMatch[] }) {
           <Link
             key={match.id}
             href={`/matches/${match.id}`}
-            className="group flex flex-col rounded-2xl border border-white/10 bg-black/20 p-4 transition hover:-translate-y-0.5 hover:border-emerald-400/30"
+            className="group flex flex-col rounded-2xl border border-white/10 bg-black/20 p-3.5 transition hover:-translate-y-0.5 hover:border-emerald-400/30 sm:p-4"
           >
-            <div className="flex items-center justify-between gap-3 text-xs uppercase tracking-wider text-stone-500">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] uppercase tracking-wider text-stone-500 sm:text-xs">
               <span>{match.date} · {match.kickoff}</span>
               <span className={/final|full time/i.test(match.status) ? 'text-stone-400' : 'text-amber-300'}>{match.status}</span>
             </div>
-            <div className="mt-5 space-y-4">
+            <div className="mt-4 space-y-3 sm:mt-5 sm:space-y-4">
               <TeamRow name={match.homeTeam} badge={match.homeBadge} score={match.homeScore} />
               <TeamRow name={match.awayTeam} badge={match.awayBadge} score={match.awayScore} />
             </div>
@@ -55,8 +55,8 @@ function TeamRow({ name, badge, score }: { name: string; badge: string | null; s
       {badge ? (
         <span role="img" aria-label={`${name} badge`} className="h-9 w-9 shrink-0 bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url("${badge}")` }} />
       ) : <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/10">⚽</span>}
-      <span className="min-w-0 flex-1 truncate font-bold text-white">{name}</span>
-      <span className="text-2xl font-black tabular-nums text-white">{score ?? '–'}</span>
+      <span className="min-w-0 flex-1 truncate text-sm font-bold text-white sm:text-base">{name}</span>
+      <span className="text-xl font-black tabular-nums text-white sm:text-2xl">{score ?? '–'}</span>
     </div>
   );
 }

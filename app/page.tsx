@@ -23,16 +23,16 @@ export default async function HomePage() {
   return (
     <main className="min-h-screen overflow-hidden bg-[#07120d] text-stone-100">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_15%_10%,_rgba(40,185,111,0.14),_transparent_28%),radial-gradient(circle_at_85%_25%,_rgba(245,185,66,0.09),_transparent_24%)]" />
-      <div className="relative mx-auto max-w-[1440px] px-4 pb-16 pt-5 sm:px-6 lg:px-10">
+      <div className="relative mx-auto max-w-[1440px] px-3 pb-12 pt-3 sm:px-6 sm:pb-16 sm:pt-5 lg:px-10">
         <SiteNav />
 
-        <section className="mt-6 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-[2rem] border border-white/10 bg-[#0b1b13] p-6 shadow-2xl shadow-black/25 sm:p-10 lg:p-12">
-            <p className="inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-emerald-300">
+        <section className="mt-4 grid gap-3 sm:mt-6 sm:gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-[1.5rem] border border-white/10 bg-[#0b1b13] p-5 shadow-2xl shadow-black/25 sm:rounded-[2rem] sm:p-10 lg:p-12">
+            <p className="inline-flex max-w-full rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-300 sm:text-xs sm:tracking-[0.22em]">
               Early beta · live football, fantasy, alerts
             </p>
             <p className="mt-8 text-xs font-medium uppercase tracking-[0.28em] text-stone-500">Scores • fantasy • news • communities</p>
-            <h1 className="mt-3 max-w-4xl text-5xl font-black leading-[0.92] tracking-[-0.06em] text-white sm:text-7xl lg:text-8xl">
+            <h1 className="mt-3 max-w-4xl text-[2.7rem] font-black leading-[0.92] tracking-[-0.06em] text-white min-[390px]:text-5xl sm:text-7xl lg:text-8xl">
               The Matchroom
               <span className="block text-emerald-400">for matchday.</span>
             </h1>
@@ -42,31 +42,31 @@ export default async function HomePage() {
             <p className="mt-4 max-w-2xl rounded-2xl border border-amber-300/20 bg-amber-300/10 p-3 text-sm leading-6 text-amber-100">
               The Matchroom is in early beta. Live data can occasionally lag or differ based on provider availability.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/fantasy" className="rounded-full bg-emerald-400 px-5 py-3 text-sm font-black text-[#07120d] transition hover:bg-emerald-300">
+            <div className="mt-7 grid gap-2 sm:mt-8 sm:flex sm:flex-wrap sm:gap-3">
+              <Link href="/fantasy" className="rounded-full bg-emerald-400 px-5 py-3 text-center text-sm font-black text-[#07120d] transition hover:bg-emerald-300">
                 Build your squad
               </Link>
-              <Link href="/leagues" className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
+              <Link href="/leagues" className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10">
                 Explore live football
               </Link>
-              <Link href="/about#feedback" className="rounded-full border border-amber-300/20 bg-amber-300/10 px-5 py-3 text-sm font-semibold text-amber-100 transition hover:bg-amber-300/20">
+              <Link href="/about#feedback" className="rounded-full border border-amber-300/20 bg-amber-300/10 px-5 py-3 text-center text-sm font-semibold text-amber-100 transition hover:bg-amber-300/20">
                 Help shape it
               </Link>
             </div>
           </div>
 
           {nextMatch && (
-            <Link href={`/matches/${nextMatch.id}`} className="group rounded-[2rem] border border-white/10 bg-white/[0.045] p-6 transition hover:border-emerald-400/30 hover:bg-white/[0.065] sm:p-8">
-              <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">
+            <Link href={`/matches/${nextMatch.id}`} className="group rounded-[1.5rem] border border-white/10 bg-white/[0.045] p-5 transition hover:border-emerald-400/30 hover:bg-white/[0.065] sm:rounded-[2rem] sm:p-8">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-500 sm:text-xs sm:tracking-[0.2em]">
                 <span>{nextMatch.status === 'Scheduled' ? 'Up next' : 'Latest result'}</span>
                 <span>{nextMatch.date} · {nextMatch.kickoff}</span>
               </div>
-              <div className="mt-8 space-y-5">
+              <div className="mt-6 space-y-4 sm:mt-8 sm:space-y-5">
                 <HeroTeam name={nextMatch.homeTeam} badge={nextMatch.homeBadge} score={nextMatch.homeScore} />
                 <div className="h-px bg-white/10" />
                 <HeroTeam name={nextMatch.awayTeam} badge={nextMatch.awayBadge} score={nextMatch.awayScore} />
               </div>
-              <div className="mt-8 flex items-center justify-between text-sm text-stone-400">
+              <div className="mt-6 flex items-center justify-between gap-3 text-sm text-stone-400 sm:mt-8">
                 <span className="truncate">{nextMatch.venue}</span>
                 <span className="text-emerald-300 transition group-hover:translate-x-1">Match center →</span>
               </div>
@@ -74,14 +74,14 @@ export default async function HomePage() {
           )}
         </section>
 
-        <section className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <section className="mt-3 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3 lg:grid-cols-4">
           <Metric value={live} label="Live now" accent />
           <Metric value={matches.length} label="Matches tracked" />
           <Metric value={completed} label="Results posted" />
           <Metric value={standings.length} label="Teams in feed" />
         </section>
 
-        <section className="mt-10 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <section className="mt-6 grid gap-3 sm:mt-10 md:grid-cols-2 xl:grid-cols-4">
           <FeatureCard href="/statistics" eyebrow="Stats" title="Understand the game" body="Player leaders, team tables, live form, and league-by-league analytics in one place." />
           <FeatureCard href="/fantasy" eyebrow="Fantasy" title="Compete with friends" body="Build a squad, choose a captain, make picks, and climb global or private leaderboards." />
           <FeatureCard href="/favorites" eyebrow="Alerts" title="Never miss moments" body="Follow teams and receive kickoff, goal, and full-time notifications." />
@@ -90,8 +90,8 @@ export default async function HomePage() {
 
         <RecentFootballNews items={footballNews} />
 
-        <section className="mt-10 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.035] p-6 sm:p-7">
+        <section className="mt-8 grid gap-3 sm:mt-10 sm:gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.035] p-5 sm:rounded-[2rem] sm:p-7">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-300">What we are learning</p>
             <h2 className="mt-3 text-3xl font-black tracking-[-0.03em] text-white">Help shape the product before it gets bigger.</h2>
             <p className="mt-4 text-sm leading-7 text-stone-400">
@@ -108,7 +108,7 @@ export default async function HomePage() {
           <MatchDayCenter matches={featuredMatches.length ? featuredMatches : matches.slice(0, 6)} />
         </section>
 
-        <section className="mt-12">
+        <section className="mt-9 sm:mt-12">
           <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-400">Competition snapshot</p>
@@ -133,11 +133,11 @@ export default async function HomePage() {
 
 function RecentFootballNews({ items }: { items: TeamNewsItem[] }) {
   return (
-    <section className="mt-12">
+    <section className="mt-9 sm:mt-12">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-300">Football news</p>
-          <h2 className="mt-2 text-3xl font-black text-white">Recent football news</h2>
+          <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">Recent football news</h2>
         </div>
         <Link href="/predictions" className="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-stone-300 hover:bg-white/10">
           Match context →
@@ -146,7 +146,7 @@ function RecentFootballNews({ items }: { items: TeamNewsItem[] }) {
       {items.length ? (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {items.slice(0, 6).map((item) => (
-            <a key={`${item.source}-${item.title}`} href={item.url} target="_blank" rel="noreferrer" className="rounded-3xl border border-white/10 bg-white/[0.035] p-5 transition hover:border-sky-400/30 hover:bg-white/[0.055]">
+            <a key={`${item.source}-${item.title}`} href={item.url} target="_blank" rel="noreferrer" className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 transition hover:border-sky-400/30 hover:bg-white/[0.055] sm:rounded-3xl sm:p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">{item.source}</p>
               <h3 className="mt-3 line-clamp-3 font-bold leading-6 text-white">{item.title}</h3>
               <p className="mt-4 text-xs text-stone-500">{new Date(item.publishedAt).toLocaleDateString()}</p>
@@ -164,7 +164,7 @@ function FeatureCard({ href, eyebrow, title, body }: { href: string; eyebrow: st
   return (
     <Link href={href} className="group rounded-3xl border border-white/10 bg-white/[0.035] p-5 transition hover:-translate-y-0.5 hover:border-emerald-400/30 hover:bg-white/[0.055]">
       <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300">{eyebrow}</p>
-      <h2 className="mt-3 text-xl font-black text-white">{title}</h2>
+      <h2 className="mt-3 text-lg font-black text-white sm:text-xl">{title}</h2>
       <p className="mt-2 text-sm leading-6 text-stone-500">{body}</p>
       <span className="mt-4 inline-flex text-sm font-semibold text-stone-400 transition group-hover:text-emerald-300">Open →</span>
     </Link>
@@ -173,7 +173,7 @@ function FeatureCard({ href, eyebrow, title, body }: { href: string; eyebrow: st
 
 function GroupPreview({ group, teams }: { group: string; teams: LiveStanding[] }) {
   return (
-    <article className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
+    <article className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 sm:rounded-3xl sm:p-5">
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-black text-white">Group {group}</h3>
         <Link href={`/groups/${group.toLowerCase()}`} className="text-sm font-semibold text-emerald-300">View →</Link>
@@ -195,17 +195,17 @@ function GroupPreview({ group, teams }: { group: string; teams: LiveStanding[] }
 function HeroTeam({ name, badge, score }: { name: string; badge: string | null; score: number | null }) {
   return (
     <div className="flex items-center gap-4">
-      {badge ? <span className="h-12 w-12 bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url("${badge}")` }} /> : <span className="grid h-12 w-12 place-items-center rounded-full bg-white/10 text-sm font-black text-white">{name.slice(0, 2)}</span>}
-      <span className="min-w-0 flex-1 truncate text-xl font-bold text-white">{name}</span>
-      <span className="text-3xl font-black tabular-nums text-white">{score ?? '–'}</span>
+      {badge ? <span className="h-10 w-10 shrink-0 bg-contain bg-center bg-no-repeat sm:h-12 sm:w-12" style={{ backgroundImage: `url("${badge}")` }} /> : <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/10 text-sm font-black text-white sm:h-12 sm:w-12">{name.slice(0, 2)}</span>}
+      <span className="min-w-0 flex-1 truncate text-lg font-bold text-white sm:text-xl">{name}</span>
+      <span className="text-2xl font-black tabular-nums text-white sm:text-3xl">{score ?? '–'}</span>
     </div>
   );
 }
 
 function Metric({ value, label, accent = false }: { value: number; label: string; accent?: boolean }) {
   return (
-    <div className={`rounded-2xl border p-4 sm:p-5 ${accent ? 'border-emerald-300/20 bg-emerald-300/10' : 'border-white/10 bg-white/[0.035]'}`}>
-      <p className={`text-2xl font-black tabular-nums sm:text-3xl ${accent ? 'text-emerald-300' : 'text-white'}`}>{value}</p>
+    <div className={`rounded-2xl border p-3 sm:p-5 ${accent ? 'border-emerald-300/20 bg-emerald-300/10' : 'border-white/10 bg-white/[0.035]'}`}>
+      <p className={`text-xl font-black tabular-nums sm:text-3xl ${accent ? 'text-emerald-300' : 'text-white'}`}>{value}</p>
       <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-stone-500 sm:text-xs sm:tracking-[0.16em]">{label}</p>
     </div>
   );
