@@ -29,7 +29,7 @@ export default async function HomePage() {
         <section className="mt-4 grid gap-3 sm:mt-6 sm:gap-5 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="rounded-[1.5rem] border border-white/10 bg-[#0b1b13] p-5 shadow-2xl shadow-black/25 sm:rounded-[2rem] sm:p-10 lg:p-12">
             <p className="inline-flex max-w-full rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-300 sm:text-xs sm:tracking-[0.22em]">
-              Early beta · live football, fantasy, alerts
+              Early beta · private fantasy matchday groups
             </p>
             <p className="mt-8 text-xs font-medium uppercase tracking-[0.28em] text-stone-500">Scores • fantasy • news • communities</p>
             <h1 className="mt-3 max-w-4xl text-[2.7rem] font-black leading-[0.92] tracking-[-0.06em] text-white min-[390px]:text-5xl sm:text-7xl lg:text-8xl">
@@ -37,14 +37,14 @@ export default async function HomePage() {
               <span className="block text-emerald-400">for matchday.</span>
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-7 text-stone-300 sm:text-lg">
-              A social football hub where fans follow live matches, build fantasy squads, join private leagues, track favorite teams, and read recent football news before kickoff.
+              A social matchday room where football fans create private fantasy leagues, invite friends, make picks, follow live updates, and keep the group alive before kickoff.
             </p>
             <p className="mt-4 max-w-2xl rounded-2xl border border-amber-300/20 bg-amber-300/10 p-3 text-sm leading-6 text-amber-100">
               The Matchroom is in early beta. Live data can occasionally lag or differ based on provider availability.
             </p>
             <div className="mt-7 grid gap-2 sm:mt-8 sm:flex sm:flex-wrap sm:gap-3">
               <Link href="/fantasy" className="rounded-full bg-emerald-400 px-5 py-3 text-center text-sm font-black text-[#07120d] transition hover:bg-emerald-300">
-                Build your squad
+                Start your room
               </Link>
               <Link href="/leagues" className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10">
                 Explore live football

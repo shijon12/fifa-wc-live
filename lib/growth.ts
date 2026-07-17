@@ -1,4 +1,5 @@
 import 'server-only';
+import { listFantasyProfiles } from '@/lib/auth';
 import { isMissingTable, supabaseRest } from '@/lib/supabaseRest';
 
 export type ProductEventInput = {
@@ -24,7 +25,12 @@ export type GrowthSummary = {
   configured: boolean;
   totalEvents: number;
   uniqueVisitors: number;
+  returningVisitors: number;
   waitlistCount: number;
+  signups: number;
+  activeUsers: number;
+  privateLeagues: number;
+  notificationOptIns: number;
   topFeatures: Array<{ feature: string; count: number }>;
   recentFeedback: Array<{
     id: number;
@@ -41,6 +47,7 @@ export type GrowthSummary = {
 
 type ProductEventRow = {
   anonymous_id: string | null;
+  user_id?: string | null;
   event_name: string;
   feature: string | null;
   created_at: string;
@@ -102,10 +109,17 @@ export async function submitFeedback(input: FeedbackInput) {
 export async function getGrowthSummary(): Promise<GrowthSummary> {
   try {
     const [events, feedback] = await Promise.all([
-      supabaseRest<ProductEventRow[]>('product_events?select=anonymous_id,event_name,feature,created_at&order=created_at.desc&limit=1000'),
+      supabaseRest<ProductEventRow[]>('product_events?select=anonymous_id,user_id,event_name,feature,created_at&order=created_at.desc&limit=1000'),
       supabaseRest<GrowthSummary['recentFeedback']>('waitlist_feedback?select=id,email,name,role,favorite_team,interest,message,source_path,created_at&order=created_at.desc&limit=25'),
     ]);
-    const uniqueVisitors = new Set(events.map((event) => event.anonymous_id).filter(Boolean)).size;
+    const visitorCounts = new Map<string, number>();
+    for (const event of events) {
+      const id = event.anonymous_id;
+      if (id) visitorCounts.set(id, (visitorCounts.get(id) ?? 0) + 1);
+    }
+    const uniqueVisitors = visitorCounts.size;
+    const returningVisitors = Array.from(visitorCounts.values()).filter((count) => count > 1).length;
+    const activeUsers = new Set(events.map((event) => event.user_id).filter(Boolean)).size;
     const featureCounts = new Map<string, number>();
     for (const event of events) {
       const feature = event.feature || event.event_name;
@@ -116,19 +130,52 @@ export async function getGrowthSummary(): Promise<GrowthSummary> {
       .sort((a, b) => b.count - a.count)
       .slice(0, 8);
 
+    const [users, privateLeagues, notificationOptIns] = await Promise.all([
+      listFantasyProfiles().catch(() => []),
+      countRows('private_leagues'),
+      countRows('push_subscriptions'),
+    ]);
+
     return {
       configured: true,
       totalEvents: events.length,
       uniqueVisitors,
+      returningVisitors,
       waitlistCount: feedback.length,
+      signups: users.length,
+      activeUsers,
+      privateLeagues,
+      notificationOptIns,
       topFeatures,
       recentFeedback: feedback,
     };
   } catch (error) {
     if (isMissingTable(error)) {
-      return { configured: false, totalEvents: 0, uniqueVisitors: 0, waitlistCount: 0, topFeatures: [], recentFeedback: [] };
+      return {
+        configured: false,
+        totalEvents: 0,
+        uniqueVisitors: 0,
+        returningVisitors: 0,
+        waitlistCount: 0,
+        signups: 0,
+        activeUsers: 0,
+        privateLeagues: 0,
+        notificationOptIns: 0,
+        topFeatures: [],
+        recentFeedback: [],
+      };
     }
     throw error;
+  }
+}
+
+async function countRows(table: string) {
+  try {
+    const rows = await supabaseRest<Array<Record<string, unknown>>>(`${table}?select=*&limit=10000`);
+    return rows.length;
+  } catch (error) {
+    if (isMissingTable(error)) return 0;
+    return 0;
   }
 }
 

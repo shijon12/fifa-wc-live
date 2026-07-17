@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { LeagueMatch } from '@/lib/leagueData';
 import { FANTASY_BUDGET, FANTASY_SQUAD_SIZE, squadCost, squadPoints, type FantasyPlayer } from '@/lib/fantasySquad';
@@ -161,13 +162,27 @@ export function FantasyLeagueGame({ matches, players }: { matches: LeagueMatch[]
   return (
     <div className="space-y-8">
       <section className="rounded-3xl border border-white/10 bg-[#0b1b13] p-6 shadow-2xl shadow-black/20 sm:p-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-300">Fantasy football</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-300">Private fantasy + matchday groups</p>
         <div className="mt-3 grid gap-6 lg:grid-cols-[1fr_360px] lg:items-end">
           <div>
-            <h1 className="text-4xl font-black tracking-[-0.04em] text-white sm:text-6xl">Build a squad. Make your picks.</h1>
+            <h1 className="text-4xl font-black tracking-[-0.04em] text-white sm:text-6xl">Create a room. Pick your squad. Invite friends.</h1>
             <p className="mt-4 max-w-3xl text-base leading-7 text-stone-300 sm:text-lg">
-              This now has a classic fantasy squad mode: pick 11 players, choose a captain, stay under budget, and score from real player performances.
+              The Matchroom is focused on private fantasy groups for football fans: follow the matchday, make picks, compete with friends, and share one invite link.
             </p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-4">
+              <OnboardingStep step="1" title="Sign in" body="Save your squad." />
+              <OnboardingStep step="2" title="Create room" body="Start a private league." />
+              <OnboardingStep step="3" title="Make picks" body="Choose squad + results." />
+              <OnboardingStep step="4" title="Invite friends" body="Share the link." />
+            </div>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link href="/fantasy/leagues" className="rounded-full bg-emerald-400 px-5 py-3 text-sm font-black text-[#07120d] hover:bg-emerald-300">
+                Create private league
+              </Link>
+              <button type="button" onClick={() => setActiveTab('squad')} className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-black text-white hover:bg-white/10">
+                Pick squad
+              </button>
+            </div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
             <label className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500" htmlFor="managerName">Manager name</label>
@@ -265,7 +280,24 @@ export function FantasyLeagueGame({ matches, players }: { matches: LeagueMatch[]
               </div>
               <span className="text-2xl font-black text-emerald-300">{row.totalScore ?? row.score}</span>
             </div>
-          )) : <p className="p-4 text-sm text-stone-500">No leaderboard entries yet. Save a squad or pick to appear here.</p>}
+          )) : (
+            <div className="p-5">
+              <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-5">
+                <p className="text-xl font-black text-white">Start the first league.</p>
+                <p className="mt-2 text-sm leading-6 text-emerald-100/80">
+                  The leaderboard appears once fans save squads or picks. Create a private league, invite friends, and be the first room on the table.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link href="/fantasy/leagues" className="rounded-full bg-emerald-400 px-4 py-2 text-sm font-black text-[#07120d] hover:bg-emerald-300">
+                    Create league
+                  </Link>
+                  <button type="button" onClick={() => setActiveTab('squad')} className="rounded-full border border-white/10 px-4 py-2 text-sm font-bold text-white hover:bg-white/10">
+                    Build squad
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>}
 
@@ -331,6 +363,16 @@ function TabButton({ active, onClick, label, description }: { active: boolean; o
       <span className="block text-sm font-black">{label}</span>
       <span className={`mt-0.5 block text-xs ${active ? 'text-[#07120d]/70' : 'text-stone-600'}`}>{description}</span>
     </button>
+  );
+}
+
+function OnboardingStep({ step, title, body }: { step: string; title: string; body: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+      <span className="grid h-7 w-7 place-items-center rounded-full bg-emerald-400 text-xs font-black text-[#07120d]">{step}</span>
+      <p className="mt-3 font-black text-white">{title}</p>
+      <p className="mt-1 text-xs leading-5 text-stone-500">{body}</p>
+    </div>
   );
 }
 

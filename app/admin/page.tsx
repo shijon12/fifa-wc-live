@@ -37,9 +37,14 @@ export default async function AdminPage() {
           </div>
         )}
 
-        <section className="mt-8 grid gap-4 md:grid-cols-3">
+        <section className="mt-8 grid gap-4 md:grid-cols-3 xl:grid-cols-4">
+          <GrowthMetric label="Signups" value={growth.signups} />
+          <GrowthMetric label="Active users" value={growth.activeUsers} />
           <GrowthMetric label="Tracked events" value={growth.totalEvents} />
           <GrowthMetric label="Unique visitors" value={growth.uniqueVisitors} />
+          <GrowthMetric label="Returning visitors" value={growth.returningVisitors} />
+          <GrowthMetric label="Private leagues" value={growth.privateLeagues} />
+          <GrowthMetric label="Notification opt-ins" value={growth.notificationOptIns} />
           <GrowthMetric label="Feedback notes" value={growth.waitlistCount} />
         </section>
 
