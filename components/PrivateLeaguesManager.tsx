@@ -195,6 +195,7 @@ export function PrivateLeaguesManager() {
                   </Link>
                 </div>
               </div>
+              <MatchroomAssistant league={league} rows={leagueLeaderboards[league.id] ?? []} />
               <RoomLeaderboard rows={leagueLeaderboards[league.id] ?? []} memberCount={league.members} />
             </div>
           )) : (
@@ -207,6 +208,96 @@ export function PrivateLeaguesManager() {
       </section>
     </div>
   );
+}
+
+function MatchroomAssistant({ league, rows }: { league: PrivateLeague; rows: LeaderboardRow[] }) {
+  const sortedRows = [...rows].sort((a, b) => (b.totalScore ?? b.score) - (a.totalScore ?? a.score));
+  const leader = sortedRows[0];
+  const chaser = sortedRows[1];
+  const mostPicks = [...rows].sort((a, b) => b.picks - a.picks)[0];
+  const mostSquadPlayers = [...rows].sort((a, b) => (b.squadPlayers ?? 0) - (a.squadPlayers ?? 0))[0];
+  const activeMembers = rows.length;
+  const inactiveMembers = Math.max(0, league.members - activeMembers);
+  const briefing = buildRoomBriefing({ league, leader, chaser, mostPicks, mostSquadPlayers, activeMembers, inactiveMembers });
+
+  return (
+    <div className="mt-4 overflow-hidden rounded-2xl border border-violet-300/20 bg-[radial-gradient(circle_at_85%_12%,rgba(167,139,250,0.14),transparent_34%),rgba(255,255,255,0.035)]">
+      <div className="border-b border-white/10 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300">Matchroom Assistant</p>
+            <h3 className="mt-2 text-xl font-black text-white">Room briefing</h3>
+          </div>
+          <span className="rounded-full border border-violet-300/20 bg-violet-300/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-violet-200">
+            Beta agent
+          </span>
+        </div>
+        <p className="mt-3 text-sm leading-6 text-violet-50/80">{briefing.summary}</p>
+      </div>
+
+      <div className="grid gap-3 p-4 md:grid-cols-3">
+        {briefing.cards.map((card) => (
+          <div key={card.label} className="rounded-xl border border-white/10 bg-black/20 p-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-stone-500">{card.label}</p>
+            <p className="mt-2 text-sm font-bold leading-5 text-white">{card.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="border-t border-white/10 bg-black/15 p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">Next best action</p>
+        <p className="mt-2 text-sm leading-6 text-stone-300">{briefing.nextAction}</p>
+      </div>
+    </div>
+  );
+}
+
+function buildRoomBriefing({
+  league,
+  leader,
+  chaser,
+  mostPicks,
+  mostSquadPlayers,
+  activeMembers,
+  inactiveMembers,
+}: {
+  league: PrivateLeague;
+  leader?: LeaderboardRow;
+  chaser?: LeaderboardRow;
+  mostPicks?: LeaderboardRow;
+  mostSquadPlayers?: LeaderboardRow;
+  activeMembers: number;
+  inactiveMembers: number;
+}) {
+  if (!leader) {
+    return {
+      summary: `${league.name} is ready, but the room needs its first saved squads or predictions before the assistant can call the action.`,
+      cards: [
+        { label: 'Room status', value: `${league.members} ${league.members === 1 ? 'member' : 'members'} joined` },
+        { label: 'Activity', value: 'No saved scores yet' },
+        { label: 'Momentum', value: 'Waiting for first picks' },
+      ],
+      nextAction: 'Share the invite link and ask everyone to save a squad or make one prediction. Once two or more people play, this briefing turns into a live room pulse.',
+    };
+  }
+
+  const leaderScore = leader.totalScore ?? leader.score;
+  const chaserScore = chaser ? (chaser.totalScore ?? chaser.score) : null;
+  const gap = chaserScore === null ? null : leaderScore - chaserScore;
+
+  return {
+    summary: chaser && gap !== null
+      ? `${league.name} has ${activeMembers} active ${activeMembers === 1 ? 'player' : 'players'}. ${leader.managerName} leads on ${leaderScore} points, with ${chaser.managerName} ${gap} ${gap === 1 ? 'point' : 'points'} behind.`
+      : `${league.name} has its first active player. ${leader.managerName} is setting the early pace with ${leaderScore} points.`,
+    cards: [
+      { label: 'Top of room', value: `${leader.managerName} · ${leaderScore} pts` },
+      { label: 'Most prepared', value: mostSquadPlayers ? `${mostSquadPlayers.managerName} · ${mostSquadPlayers.squadPlayers ?? 0} squad players` : 'No squad saved yet' },
+      { label: 'Prediction pulse', value: mostPicks ? `${mostPicks.managerName} · ${mostPicks.picks} ${mostPicks.picks === 1 ? 'pick' : 'picks'}` : 'No predictions yet' },
+    ],
+    nextAction: inactiveMembers > 0
+      ? `${inactiveMembers} ${inactiveMembers === 1 ? 'member has' : 'members have'} joined but not scored yet. Ask them to save a squad or make a match pick so the leaderboard becomes competitive.`
+      : 'Everyone in the room has activity. Keep the group engaged by checking the leaderboard after the next matchday.',
+  };
 }
 
 function RoomLeaderboard({ rows, memberCount }: { rows: LeaderboardRow[]; memberCount: number }) {
