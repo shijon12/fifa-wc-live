@@ -3,13 +3,13 @@ self.addEventListener('push', (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch {
-    data = { title: 'World Cup update', body: event.data ? event.data.text() : '' };
+    data = { title: 'Matchroom update', body: event.data ? event.data.text() : '' };
   }
-  event.waitUntil(self.registration.showNotification(data.title || 'World Cup update', {
+  event.waitUntil(self.registration.showNotification(data.title || 'Matchroom update', {
     body: data.body || 'A match you follow has an update.',
     icon: '/icon.svg',
     badge: '/badge.svg',
-    tag: data.tag || 'world-cup-update',
+    tag: data.tag || 'matchroom-update',
     renotify: true,
     data: { url: data.url || '/' },
   }));

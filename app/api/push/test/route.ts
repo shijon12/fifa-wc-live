@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       event_key: `test:${crypto.randomUUID()}`,
       match_id: 'test',
       team_ids: [],
-      title: 'World Cup alerts enabled',
+      title: 'Matchroom alerts enabled',
       body: 'Background notifications are working for your followed teams.',
       url: '/favorites',
     };
