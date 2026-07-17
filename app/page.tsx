@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { FeedbackForm } from '@/components/FeedbackForm';
 import { KnockoutBracket } from '@/components/KnockoutBracket';
 import { MatchDayCenter } from '@/components/MatchDayCenter';
+import { SiteFooter } from '@/components/SiteFooter';
 import { SiteNav } from '@/components/SiteNav';
 import { fetchWorldCupMatches, fetchWorldCupStandings, type LiveStanding } from '@/lib/liveData';
 import { fetchRecentFootballNews, type TeamNewsItem } from '@/lib/teamNews';
@@ -43,11 +44,14 @@ export default async function HomePage() {
               The Matchroom is in early beta. Live data can occasionally lag or differ based on provider availability.
             </p>
             <div className="mt-7 grid gap-2 sm:mt-8 sm:flex sm:flex-wrap sm:gap-3">
-              <Link href="/fantasy" className="rounded-full bg-emerald-400 px-5 py-3 text-center text-sm font-black text-[#07120d] transition hover:bg-emerald-300">
-                Start your room
+              <Link href="/fantasy/leagues" className="rounded-full bg-emerald-400 px-5 py-3 text-center text-sm font-black text-[#07120d] transition hover:bg-emerald-300">
+                Create your matchroom
+              </Link>
+              <Link href="/fantasy/leagues" className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10">
+                Join a friend&apos;s room
               </Link>
               <Link href="/leagues" className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10">
-                Explore live football
+                Browse live football
               </Link>
               <Link href="/about#feedback" className="rounded-full border border-amber-300/20 bg-amber-300/10 px-5 py-3 text-center text-sm font-semibold text-amber-100 transition hover:bg-amber-300/20">
                 Help shape it
@@ -81,6 +85,27 @@ export default async function HomePage() {
           <Metric value={standings.length} label="Teams in feed" />
         </section>
 
+        <section className="mt-6 grid gap-3 sm:mt-8 lg:grid-cols-3">
+          <StartCard
+            href="/fantasy/leagues"
+            eyebrow="Step 1"
+            title="Create your matchroom"
+            body="Start a private league for your group chat, office crew, or weekend football circle."
+          />
+          <StartCard
+            href="/fantasy/leagues"
+            eyebrow="Step 2"
+            title="Join a friend&apos;s room"
+            body="Paste an invite code or open a shared link to jump straight into a private matchday group."
+          />
+          <StartCard
+            href="/leagues"
+            eyebrow="Step 3"
+            title="Browse live football"
+            body="Explore World Cup and major club fixtures, stats, tables, news, and match context."
+          />
+        </section>
+
         <section className="mt-6 grid gap-3 sm:mt-10 md:grid-cols-2 xl:grid-cols-4">
           <FeatureCard href="/statistics" eyebrow="Stats" title="Understand the game" body="Player leaders, team tables, live form, and league-by-league analytics in one place." />
           <FeatureCard href="/fantasy" eyebrow="Fantasy" title="Compete with friends" body="Build a squad, choose a captain, make picks, and climb global or private leaderboards." />
@@ -89,6 +114,21 @@ export default async function HomePage() {
         </section>
 
         <RecentFootballNews items={footballNews} />
+
+        <section className="mt-8 rounded-[1.5rem] border border-emerald-400/20 bg-[radial-gradient(circle_at_85%_10%,rgba(52,211,153,0.14),transparent_32%),rgba(16,185,129,0.08)] p-5 sm:mt-10 sm:rounded-[2rem] sm:p-7">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-300">For the group chat</p>
+          <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-2xl font-black text-white sm:text-3xl">Got a football group chat?</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-emerald-50/80">
+                Start a room, invite friends, make picks, and turn matchday into something everyone can follow together.
+              </p>
+            </div>
+            <Link href="/fantasy/leagues" className="shrink-0 rounded-full bg-emerald-400 px-5 py-3 text-center text-sm font-black text-[#07120d] hover:bg-emerald-300">
+              Start a room
+            </Link>
+          </div>
+        </section>
 
         <section className="mt-8 grid gap-3 sm:mt-10 sm:gap-5 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.035] p-5 sm:rounded-[2rem] sm:p-7">
@@ -126,6 +166,8 @@ export default async function HomePage() {
         </section>
 
         <KnockoutBracket matches={matches} />
+
+        <SiteFooter />
       </div>
     </main>
   );
@@ -154,9 +196,22 @@ function RecentFootballNews({ items }: { items: TeamNewsItem[] }) {
           ))}
         </div>
       ) : (
-        <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 text-sm text-stone-500">Recent football news is temporarily unavailable.</div>
+        <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 text-sm leading-6 text-stone-400">
+          Recent football news is temporarily unavailable. Live scores, fantasy rooms, stats, and alerts still work while the news feed catches up.
+        </div>
       )}
     </section>
+  );
+}
+
+function StartCard({ href, eyebrow, title, body }: { href: string; eyebrow: string; title: string; body: string }) {
+  return (
+    <Link href={href} className="group rounded-3xl border border-white/10 bg-white/[0.035] p-5 transition hover:-translate-y-0.5 hover:border-emerald-400/30 hover:bg-white/[0.055]">
+      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-300">{eyebrow}</p>
+      <h2 className="mt-3 text-xl font-black text-white">{title}</h2>
+      <p className="mt-2 text-sm leading-6 text-stone-500">{body}</p>
+      <span className="mt-4 inline-flex text-sm font-semibold text-emerald-300 transition group-hover:translate-x-1">Open →</span>
+    </Link>
   );
 }
 

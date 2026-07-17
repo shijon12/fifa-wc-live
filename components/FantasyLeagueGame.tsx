@@ -232,7 +232,14 @@ export function FantasyLeagueGame({ matches, players }: { matches: LeagueMatch[]
                       {squad.captainId === player.id ? 'Captain' : 'Make C'}
                     </button>
                   </div>
-                )) : <p className="text-sm text-stone-500">No players selected yet.</p>}
+                )) : (
+                  <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 p-3">
+                    <p className="font-bold text-emerald-100">Your squad is empty.</p>
+                    <p className="mt-1 text-sm leading-5 text-emerald-100/75">
+                      Pick 11 players from the pool, stay under budget, then choose a captain for double points.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -316,7 +323,7 @@ export function FantasyLeagueGame({ matches, players }: { matches: LeagueMatch[]
       </section>}
 
       {activeTab === 'predictions' && <section className="grid gap-4 xl:grid-cols-2">
-        {upcoming.map((match) => {
+        {upcoming.length ? upcoming.map((match) => {
           const pick = picks[match.id];
           return (
             <article key={match.id} className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
@@ -338,7 +345,17 @@ export function FantasyLeagueGame({ matches, players }: { matches: LeagueMatch[]
               </div>
             </article>
           );
-        })}
+        }) : (
+          <div className="rounded-3xl border border-amber-300/20 bg-amber-300/10 p-5 xl:col-span-2">
+            <p className="text-xl font-black text-white">No open prediction fixtures right now.</p>
+            <p className="mt-2 text-sm leading-6 text-amber-100/80">
+              Once upcoming fixtures are available in the live feed, they will appear here for match picks and confidence scoring.
+            </p>
+            <Link href="/leagues" className="mt-4 inline-flex rounded-full border border-amber-300/20 px-4 py-2 text-sm font-bold text-amber-100 hover:bg-amber-300/10">
+              Browse live football
+            </Link>
+          </div>
+        )}
       </section>}
     </div>
   );

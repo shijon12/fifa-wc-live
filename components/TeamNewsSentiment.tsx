@@ -99,7 +99,14 @@ export function TeamNewsSentiment({ teams }: { teams: string[] }) {
                   <h3 className="mt-2 font-bold leading-6 text-white">{item.title}</h3>
                   <p className="mt-2 text-xs text-stone-500">{new Date(item.publishedAt).toLocaleDateString()}</p>
                 </a>
-              )) : <p className="rounded-xl border border-white/10 p-4 text-sm text-stone-500">No recent news found for this team.</p>}
+              )) : (
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                  <p className="font-bold text-white">No recent news found for this team.</p>
+                  <p className="mt-1 text-sm leading-6 text-stone-400">
+                    Try another team or check back later. The match and statistics sections still work even when the news feed has no fresh headlines.
+                  </p>
+                </div>
+              )}
             </div>
             {news.items.length > 5 && (
               <button type="button" onClick={() => setExpanded((value) => !value)} className="mt-5 rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-sky-200 hover:border-sky-400/40">
@@ -107,7 +114,14 @@ export function TeamNewsSentiment({ teams }: { teams: string[] }) {
               </button>
             )}
           </>
-        ) : <p className="text-sm text-stone-400">News is temporarily unavailable.</p>}
+        ) : (
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+            <p className="font-bold text-white">News is temporarily unavailable.</p>
+            <p className="mt-1 text-sm leading-6 text-stone-400">
+              The feed could not load right now. You can still use predictions, team pages, fixtures, and stats while it recovers.
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );

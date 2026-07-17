@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { FeedbackForm } from '@/components/FeedbackForm';
+import { SiteFooter } from '@/components/SiteFooter';
 import { SiteNav } from '@/components/SiteNav';
 
 const pillars = [
@@ -63,11 +64,30 @@ export default function AboutPage() {
           <FeedbackForm />
         </section>
 
-        <section className="mt-5 rounded-[1.5rem] border border-white/10 bg-white/[0.035] p-5 sm:mt-8 sm:rounded-[2rem] sm:p-8">
+        <section className="mt-5 rounded-[1.5rem] border border-emerald-400/20 bg-emerald-400/[0.06] p-5 sm:mt-8 sm:rounded-[2rem] sm:p-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.26em] text-emerald-300">Built by Shijon</p>
+          <h2 className="mt-3 text-3xl font-black text-white">A football product being shaped in public.</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-emerald-50/80">
+            I built The Matchroom because football lives in group chats, quick score checks, lunch-break stat dives, and those moments when you cannot watch but still want to feel close to the game. This is an early beta, so every piece of feedback helps decide what becomes sharper next.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Link href="/fantasy/leagues" className="rounded-full bg-emerald-400 px-4 py-2 text-sm font-black text-[#07120d] hover:bg-emerald-300">
+              Create a room
+            </Link>
+            <Link href="/about#feedback" className="rounded-full border border-white/10 px-4 py-2 text-sm font-bold text-white hover:bg-white/10">
+              Send feedback
+            </Link>
+          </div>
+        </section>
+
+        <section id="data-sources" className="mt-5 scroll-mt-8 rounded-[1.5rem] border border-white/10 bg-white/[0.035] p-5 sm:mt-8 sm:rounded-[2rem] sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.26em] text-emerald-300">Data and trust</p>
           <h2 className="mt-3 text-3xl font-black text-white">What powers The Matchroom</h2>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-stone-400">
             The goal is to be useful and transparent. The Matchroom combines live sports feeds, fan preferences, browser notifications, and product analytics so we can learn what fans actually value.
+          </p>
+          <p className="mt-3 max-w-3xl rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-6 text-stone-400">
+            Privacy note: sign-in, feedback, anonymous analytics, notification preferences, and fantasy/private-league activity are used to run and improve the product. User data is not sold.
           </p>
           <div className="mt-6 grid gap-3 md:grid-cols-2">
             {dataSources.map(([title, body]) => (
@@ -78,6 +98,8 @@ export default function AboutPage() {
             ))}
           </div>
         </section>
+
+        <SiteFooter />
       </div>
     </main>
   );

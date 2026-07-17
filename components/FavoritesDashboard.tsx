@@ -74,7 +74,19 @@ export function FavoritesDashboard({ teams }: { teams: FavoriteTeam[] }) {
           </button>
         </div>
         {notificationError && <p role="alert" className="mt-4 rounded-xl border border-rose-400/20 bg-rose-400/10 p-3 text-sm text-rose-200">{notificationError}</p>}
-        {favorites.length === 0 && <p className="mt-4 text-xs text-amber-200">Follow at least one team to receive match alerts.</p>}
+        {notificationStatus === 'blocked' && (
+          <p className="mt-4 rounded-xl border border-amber-300/20 bg-amber-300/10 p-3 text-sm leading-6 text-amber-100">
+            Notifications are blocked in this browser. Open your browser site settings for The Matchroom, allow notifications, then refresh this page.
+          </p>
+        )}
+        {favorites.length === 0 && (
+          <div className="mt-4 rounded-2xl border border-amber-300/20 bg-amber-300/10 p-4">
+            <p className="font-bold text-amber-100">Choose at least one team first.</p>
+            <p className="mt-1 text-sm leading-6 text-amber-100/80">
+              Follow your favorite teams below, then enable notifications to receive kickoff, goal, and full-time alerts.
+            </p>
+          </div>
+        )}
       </section>
       <section className="mt-8">
         <h2 className="text-2xl font-bold text-white">Following {favorites.length} teams</h2>

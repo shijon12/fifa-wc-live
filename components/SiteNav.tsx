@@ -14,6 +14,7 @@ const primaryLinks = [
 const secondaryLinks = [
   { href: '/leagues', label: 'Leagues' },
   { href: '/about', label: 'About' },
+  { href: '/changelog', label: 'Updates' },
   { href: '/about#feedback', label: 'Feedback' },
   { href: '/favorites', label: 'My Teams' },
   { href: '/compare', label: 'Compare' },
