@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
 
 type PrivateLeague = {
@@ -8,6 +9,12 @@ type PrivateLeague = {
   joinCode: string;
   role: 'owner' | 'member';
   members: number;
+  memberList?: Array<{
+    userId: string;
+    name: string;
+    role: 'owner' | 'member';
+    joinedAt: string;
+  }>;
   createdAt: string;
 };
 
@@ -87,6 +94,16 @@ export function PrivateLeaguesManager() {
         </div>
       )}
 
+      <section className="rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.06] p-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300">How private leagues work</p>
+        <div className="mt-4 grid gap-3 md:grid-cols-4">
+          <HowItWorksStep step="1" title="Create a room" body="Give your group a league name. The app creates a private join code." />
+          <HowItWorksStep step="2" title="Share invite" body="Send the link or code to friends on WhatsApp, Slack, LinkedIn, or chat." />
+          <HowItWorksStep step="3" title="Everyone plays" body="Members build squads and make match predictions from their own accounts." />
+          <HowItWorksStep step="4" title="Track the table" body="Use the leaderboard as the room scoreboard as saved picks and squads update." />
+        </div>
+      </section>
+
       <section className="grid gap-4 lg:grid-cols-2">
         <form onSubmit={(event) => submit(event, 'create')} className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300">Create</p>
@@ -124,6 +141,30 @@ export function PrivateLeaguesManager() {
                   </button>
                 </div>
               </div>
+              <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Members</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {(league.memberList ?? []).length ? league.memberList?.map((member) => (
+                      <span key={member.userId} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-stone-300">
+                        {member.name}{member.role === 'owner' ? ' · owner' : ''}
+                      </span>
+                    )) : (
+                      <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-stone-500">
+                        Member names will appear here as people join.
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Link href="/fantasy" className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-xs font-black text-emerald-100 hover:bg-emerald-400/20">
+                    Make picks
+                  </Link>
+                  <Link href="/fantasy?tab=leaderboard" className="rounded-full border border-white/10 px-3 py-2 text-xs font-black text-stone-300 hover:bg-white/10">
+                    View leaderboard
+                  </Link>
+                </div>
+              </div>
             </div>
           )) : (
             <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-5">
@@ -133,6 +174,16 @@ export function PrivateLeaguesManager() {
           )}
         </div>
       </section>
+    </div>
+  );
+}
+
+function HowItWorksStep({ step, title, body }: { step: string; title: string; body: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+      <span className="grid h-8 w-8 place-items-center rounded-full bg-emerald-400 text-sm font-black text-[#07120d]">{step}</span>
+      <p className="mt-3 font-black text-white">{title}</p>
+      <p className="mt-1 text-sm leading-6 text-emerald-50/70">{body}</p>
     </div>
   );
 }

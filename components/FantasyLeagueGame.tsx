@@ -25,6 +25,7 @@ type LeaderboardRow = {
 
 const STORAGE_KEY = 'fifa-wc-fantasy-picks-v1';
 const DEFAULT_STATE: FantasyState = { managerName: 'Guest Manager', picks: {}, squad: { playerIds: [], captainId: null } };
+type FantasyTab = 'squad' | 'predictions' | 'leaderboard';
 
 function readSavedState(): FantasyState {
   if (typeof window === 'undefined') return DEFAULT_STATE;
@@ -42,11 +43,18 @@ function readSavedState(): FantasyState {
   }
 }
 
+function readInitialTab(): FantasyTab {
+  if (typeof window === 'undefined') return 'squad';
+  const tab = new URLSearchParams(window.location.search).get('tab');
+  if (tab === 'predictions' || tab === 'leaderboard' || tab === 'squad') return tab;
+  return 'squad';
+}
+
 export function FantasyLeagueGame({ matches, players }: { matches: LeagueMatch[]; players: FantasyPlayer[] }) {
   const [{ managerName, picks, squad }, setFantasyState] = useState(readSavedState);
   const [syncStatus, setSyncStatus] = useState<'loading' | 'saved' | 'saving' | 'offline'>('loading');
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
-  const [activeTab, setActiveTab] = useState<'squad' | 'predictions' | 'leaderboard'>('squad');
+  const [activeTab, setActiveTab] = useState<FantasyTab>(readInitialTab);
   const loadedAccountRef = useRef(false);
   const lastSavedSnapshotRef = useRef('');
 

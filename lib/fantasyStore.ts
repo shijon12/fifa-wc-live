@@ -2,6 +2,7 @@ import 'server-only';
 import crypto from 'node:crypto';
 import {
   getUserFantasyProfile,
+  findUserById,
   listFantasyProfiles,
   updateUserFantasyProfile,
   type AuthUser,
@@ -22,6 +23,12 @@ export type PrivateLeague = {
   joinCode: string;
   role: 'owner' | 'member';
   members: number;
+  memberList?: Array<{
+    userId: string;
+    name: string;
+    role: 'owner' | 'member';
+    joinedAt: string;
+  }>;
   createdAt: string;
 };
 
@@ -144,13 +151,26 @@ export async function listPrivateLeagues(user: AuthUser): Promise<PrivateLeague[
   if (!memberships.length) return [];
   const leagueIds = memberships.map((member) => member.league_id);
   const leagues = await supabaseRest<LeagueRow[]>(`private_leagues?id=in.(${leagueIds.join(',')})&select=*`);
-  const counts = await supabaseRest<Array<{ league_id: string }>>(`private_league_members?league_id=in.(${leagueIds.join(',')})&select=league_id`);
+  const allMembers = await supabaseRest<LeagueMemberRow[]>(`private_league_members?league_id=in.(${leagueIds.join(',')})&select=*&order=joined_at.asc`);
+  const profiles = await supabaseRest<FantasyProfileRow[]>(`fantasy_profiles?user_id=in.(${Array.from(new Set(allMembers.map((member) => member.user_id))).join(',')})&select=user_id,manager_name,updated_at`);
+  const profileByUserId = new Map(profiles.map((profile) => [profile.user_id, profile.manager_name]));
+  const missingUserIds = Array.from(new Set(allMembers.map((member) => member.user_id))).filter((id) => !profileByUserId.has(id));
+  const authUsers = await Promise.all(missingUserIds.map((id) => findUserById(id).catch(() => null)));
+  const authNameByUserId = new Map(authUsers.filter((entry) => entry !== null).map((entry) => [entry.id, entry.displayName]));
   return leagues.map((league) => ({
     id: league.id,
     name: league.name,
     joinCode: league.join_code,
     role: memberships.find((member) => member.league_id === league.id)?.role ?? 'member',
-    members: counts.filter((member) => member.league_id === league.id).length,
+    members: allMembers.filter((member) => member.league_id === league.id).length,
+    memberList: allMembers
+      .filter((member) => member.league_id === league.id)
+      .map((member) => ({
+        userId: member.user_id,
+        name: profileByUserId.get(member.user_id) ?? authNameByUserId.get(member.user_id) ?? 'Matchroom user',
+        role: member.role,
+        joinedAt: member.joined_at,
+      })),
     createdAt: league.created_at,
   }));
 }
