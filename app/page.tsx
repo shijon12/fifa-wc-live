@@ -19,8 +19,12 @@ export default async function HomePage() {
   const completed = matches.filter((match) => /final|full time/i.test(match.status)).length;
   const live = matches.filter((match) => /live|half|progress/i.test(match.status)).length;
   const nextMatch = matches.find((match) => match.status === 'Scheduled') ?? matches.at(-1);
-  const featuredMatches = matches.filter((match) => match.status === 'Scheduled').slice(0, 6);
-  const matchCards = featuredMatches.length ? featuredMatches : matches.slice(0, 6);
+  const upcomingMatches = matches.filter((match) => match.status === 'Scheduled').slice(0, 3);
+  const recentResults = matches
+    .filter((match) => match.status !== 'Scheduled')
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+    .slice(0, 6 - upcomingMatches.length);
+  const matchCards = [...upcomingMatches, ...recentResults].slice(0, 6);
   const scorersByMatch = Object.fromEntries(
     await Promise.all(
       matchCards.map(async (match) => {
