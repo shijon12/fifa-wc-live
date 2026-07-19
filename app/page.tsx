@@ -6,6 +6,7 @@ import { MatchDayCenter } from '@/components/MatchDayCenter';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteNav } from '@/components/SiteNav';
 import { fetchWorldCupMatches, fetchWorldCupMatchScorers, fetchWorldCupStandings, type LiveStanding } from '@/lib/liveData';
+import { winnerEmoji, winnerSide } from '@/lib/resultCelebrations';
 import { fetchRecentFootballNews, type TeamNewsItem } from '@/lib/teamNews';
 
 export const dynamic = 'force-dynamic';
@@ -20,6 +21,7 @@ export default async function HomePage() {
   const completed = matches.filter((match) => /final|full time/i.test(match.status)).length;
   const live = matches.filter((match) => /live|half|progress/i.test(match.status)).length;
   const nextMatch = matches.find((match) => match.status === 'Scheduled') ?? matches.at(-1);
+  const heroWinner = nextMatch ? winnerSide(nextMatch) : null;
   const upcomingMatches = matches.filter((match) => match.status === 'Scheduled').slice(0, 3);
   const recentResults = matches
     .filter((match) => match.status !== 'Scheduled')
@@ -86,9 +88,9 @@ export default async function HomePage() {
                 <span>{nextMatch.date} · {nextMatch.kickoff}</span>
               </div>
               <div className="mt-6 space-y-4 sm:mt-8 sm:space-y-5">
-                <HeroTeam name={nextMatch.homeTeam} badge={nextMatch.homeBadge} score={nextMatch.homeScore} />
+                <HeroTeam name={nextMatch.homeTeam} badge={nextMatch.homeBadge} score={nextMatch.homeScore} emoji={winnerEmoji(nextMatch, 'home')} muted={heroWinner === 'away'} />
                 <div className="h-px bg-white/10" />
-                <HeroTeam name={nextMatch.awayTeam} badge={nextMatch.awayBadge} score={nextMatch.awayScore} />
+                <HeroTeam name={nextMatch.awayTeam} badge={nextMatch.awayBadge} score={nextMatch.awayScore} emoji={winnerEmoji(nextMatch, 'away')} muted={heroWinner === 'home'} />
               </div>
               <div className="mt-6 flex items-center justify-between gap-3 text-sm text-stone-400 sm:mt-8">
                 <span className="truncate">{nextMatch.venue}</span>
@@ -284,11 +286,11 @@ function GroupPreview({ group, teams }: { group: string; teams: LiveStanding[] }
   );
 }
 
-function HeroTeam({ name, badge, score }: { name: string; badge: string | null; score: number | null }) {
+function HeroTeam({ name, badge, score, emoji = '', muted = false }: { name: string; badge: string | null; score: number | null; emoji?: string; muted?: boolean }) {
   return (
-    <div className="flex items-center gap-4">
+    <div className={`flex items-center gap-4 ${muted ? 'opacity-60' : ''}`}>
       {badge ? <span className="h-10 w-10 shrink-0 bg-contain bg-center bg-no-repeat sm:h-12 sm:w-12" style={{ backgroundImage: `url("${badge}")` }} /> : <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/10 text-sm font-black text-white sm:h-12 sm:w-12">{name.slice(0, 2)}</span>}
-      <span className="min-w-0 flex-1 truncate text-lg font-bold text-white sm:text-xl">{name}</span>
+      <span className="min-w-0 flex-1 truncate text-lg font-bold text-white sm:text-xl">{emoji && <span className="mr-1.5">{emoji}</span>}{name}</span>
       <span className="text-2xl font-black tabular-nums text-white sm:text-3xl">{score ?? '–'}</span>
     </div>
   );

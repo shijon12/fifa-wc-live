@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { LiveMatch, MatchGoalScorer } from '@/lib/liveData';
+import { winnerEmoji, winnerSide } from '@/lib/resultCelebrations';
 
 export function MatchDayCenter({
   matches,
@@ -29,7 +30,9 @@ export function MatchDayCenter({
       )}
 
       <div className="grid gap-4 lg:grid-cols-3">
-        {matches.map((match) => (
+        {matches.map((match) => {
+          const winner = winnerSide(match);
+          return (
           <Link
             key={match.id}
             href={`/matches/${match.id}`}
@@ -40,8 +43,8 @@ export function MatchDayCenter({
               <span className={/final|full time/i.test(match.status) ? 'text-stone-400' : 'text-amber-300'}>{match.status}</span>
             </div>
             <div className="mt-4 space-y-3 sm:mt-5 sm:space-y-4">
-              <TeamRow name={match.homeTeam} badge={match.homeBadge} score={match.homeScore} />
-              <TeamRow name={match.awayTeam} badge={match.awayBadge} score={match.awayScore} />
+              <TeamRow name={match.homeTeam} badge={match.homeBadge} score={match.homeScore} emoji={winnerEmoji(match, 'home')} muted={winner === 'away'} />
+              <TeamRow name={match.awayTeam} badge={match.awayBadge} score={match.awayScore} emoji={winnerEmoji(match, 'away')} muted={winner === 'home'} />
             </div>
             <ScorersList
               scorers={scorersByMatch[match.id] ?? []}
@@ -56,7 +59,8 @@ export function MatchDayCenter({
               </div>
             </div>
           </Link>
-        ))}
+          );
+        })}
       </div>
 
       {!matches.length && (
@@ -120,13 +124,13 @@ function ScorersList({
   );
 }
 
-function TeamRow({ name, badge, score }: { name: string; badge: string | null; score: number | null }) {
+function TeamRow({ name, badge, score, emoji = '', muted = false }: { name: string; badge: string | null; score: number | null; emoji?: string; muted?: boolean }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className={`flex items-center gap-3 ${muted ? 'opacity-60' : ''}`}>
       {badge ? (
         <span role="img" aria-label={`${name} badge`} className="h-9 w-9 shrink-0 bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url("${badge}")` }} />
       ) : <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/10">⚽</span>}
-      <span className="min-w-0 flex-1 truncate text-sm font-bold text-white sm:text-base">{name}</span>
+      <span className="min-w-0 flex-1 truncate text-sm font-bold text-white sm:text-base">{emoji && <span className="mr-1.5">{emoji}</span>}{name}</span>
       <span className="text-xl font-black tabular-nums text-white sm:text-2xl">{score ?? '–'}</span>
     </div>
   );

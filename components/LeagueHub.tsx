@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { LeagueMatch, SupportedLeague } from '@/lib/leagueData';
+import { winnerEmoji, winnerSide } from '@/lib/resultCelebrations';
 
 export function LeagueHub({ leagues, selectedLeague, matches }: { leagues: SupportedLeague[]; selectedLeague: SupportedLeague; matches: LeagueMatch[] }) {
   const liveMatches = matches.filter((match) => match.state === 'in').length;
@@ -84,6 +85,7 @@ export function LeagueHub({ leagues, selectedLeague, matches }: { leagues: Suppo
 }
 
 function LeagueMatchCard({ match }: { match: LeagueMatch }) {
+  const winner = winnerSide(match);
   const statusStyle = match.state === 'in'
     ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-200'
     : match.state === 'post'
@@ -97,8 +99,8 @@ function LeagueMatchCard({ match }: { match: LeagueMatch }) {
         <span className="text-stone-500">{match.date} · {match.kickoff}</span>
       </div>
       <div className="mt-4 space-y-3">
-        <TeamLine name={match.homeTeam} badge={match.homeBadge} score={match.homeScore} record={match.homeForm} />
-        <TeamLine name={match.awayTeam} badge={match.awayBadge} score={match.awayScore} record={match.awayForm} />
+        <TeamLine name={match.homeTeam} badge={match.homeBadge} score={match.homeScore} record={match.homeForm} emoji={winnerEmoji(match, 'home')} muted={winner === 'away'} />
+        <TeamLine name={match.awayTeam} badge={match.awayBadge} score={match.awayScore} record={match.awayForm} emoji={winnerEmoji(match, 'away')} muted={winner === 'home'} />
       </div>
       <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
         <div className="flex items-center justify-between gap-3">
@@ -120,12 +122,12 @@ function LeagueMatchCard({ match }: { match: LeagueMatch }) {
   );
 }
 
-function TeamLine({ name, badge, score, record }: { name: string; badge: string | null; score: number | null; record: string | null }) {
+function TeamLine({ name, badge, score, record, emoji = '', muted = false }: { name: string; badge: string | null; score: number | null; record: string | null; emoji?: string; muted?: boolean }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className={`flex items-center gap-3 ${muted ? 'opacity-60' : ''}`}>
       {badge ? <span className="h-8 w-8 shrink-0 bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url("${badge}")` }} /> : <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-xs font-black text-white">{name.slice(0, 2)}</span>}
       <div className="min-w-0 flex-1">
-        <p className="truncate font-bold text-white">{name}</p>
+        <p className="truncate font-bold text-white">{emoji && <span className="mr-1.5">{emoji}</span>}{name}</p>
         {record && <p className="text-xs text-stone-500">Record: {record}</p>}
       </div>
       <span className="text-2xl font-black tabular-nums text-white">{score ?? '–'}</span>

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { LiveMatch } from '@/lib/liveData';
+import { isTournamentFinal, winnerEmoji, winnerSide } from '@/lib/resultCelebrations';
 
 const stageOrder = ['Round Of 32', 'Round Of 16', 'Quarterfinals', 'Semifinals', '3rd Place Match', 'Final'];
 
@@ -36,15 +37,20 @@ export function KnockoutBracket({ matches }: { matches: LiveMatch[] }) {
                   <span className="shrink-0 text-xs text-stone-600">{stageMatches.length} {stageMatches.length === 1 ? 'match' : 'matches'}</span>
                 </div>
                 <div className="max-h-[680px] space-y-3 overflow-y-auto pr-1">
-                  {stageMatches.map((match) => (
-                    <Link key={match.id} href={`/matches/${match.id}`} className="block rounded-2xl border border-white/[0.08] bg-black/20 p-3 transition hover:border-emerald-400/30">
-                      <BracketTeam name={match.homeTeam} badge={match.homeBadge} score={match.homeScore} />
-                      <BracketTeam name={match.awayTeam} badge={match.awayBadge} score={match.awayScore} />
+                  {stageMatches.map((match) => {
+                    const winner = winnerSide(match);
+                    const champion = isTournamentFinal(match) && winner;
+                    return (
+                    <Link key={match.id} href={`/matches/${match.id}`} className={`block rounded-2xl border p-3 transition hover:border-emerald-400/30 ${champion ? 'border-amber-300/30 bg-amber-300/[0.08]' : 'border-white/[0.08] bg-black/20'}`}>
+                      {champion && <p className="mb-2 rounded-full bg-amber-300/15 px-3 py-1 text-center text-[10px] font-black uppercase tracking-[0.2em] text-amber-100">Tournament champion</p>}
+                      <BracketTeam name={match.homeTeam} badge={match.homeBadge} score={match.homeScore} emoji={winnerEmoji(match, 'home')} muted={winner === 'away'} />
+                      <BracketTeam name={match.awayTeam} badge={match.awayBadge} score={match.awayScore} emoji={winnerEmoji(match, 'away')} muted={winner === 'home'} />
                       <p className="mt-2 truncate border-t border-white/[0.06] pt-2 text-[10px] uppercase tracking-wider text-stone-600">
                         {match.date} · {match.venue}
                       </p>
                     </Link>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}
@@ -58,11 +64,11 @@ export function KnockoutBracket({ matches }: { matches: LiveMatch[] }) {
   );
 }
 
-function BracketTeam({ name, badge, score }: { name: string; badge: string | null; score: number | null }) {
+function BracketTeam({ name, badge, score, emoji = '', muted = false }: { name: string; badge: string | null; score: number | null; emoji?: string; muted?: boolean }) {
   return (
-    <div className="flex items-center gap-2 py-1.5">
+    <div className={`flex items-center gap-2 py-1.5 ${muted ? 'opacity-60' : ''}`}>
       {badge ? <span className="h-6 w-6 shrink-0 bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url("${badge}")` }} /> : <span className="grid h-6 w-6 place-items-center rounded-full bg-white/10 text-xs">?</span>}
-      <span className="min-w-0 flex-1 truncate text-sm font-semibold text-stone-200">{name}</span>
+      <span className="min-w-0 flex-1 truncate text-sm font-semibold text-stone-200">{emoji && <span className="mr-1">{emoji}</span>}{name}</span>
       <span className="font-black tabular-nums text-white">{score ?? '–'}</span>
     </div>
   );
