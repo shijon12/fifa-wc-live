@@ -254,10 +254,10 @@ type SummaryResponse = {
   }>;
 };
 
-async function fetchJson<T>(url: string, revalidate = 15): Promise<T | null> {
+async function fetchJson<T>(url: string, _revalidate = 15): Promise<T | null> {
   try {
     const response = await fetch(url, {
-      next: { revalidate },
+      cache: 'no-store',
       headers: { Accept: 'application/json' },
       signal: AbortSignal.timeout(8_000),
     });

@@ -9,9 +9,10 @@ export const dynamic = 'force-dynamic';
 export default async function StatisticsPage({ searchParams }: { searchParams: Promise<{ league?: string }> }) {
   const params = await searchParams;
   const selectedLeague = getLeagueById(params.league);
+  const refreshedAt = new Date();
   if (selectedLeague.id !== 'world-cup') {
     const leagueStats = await fetchLeagueStats(selectedLeague);
-    return <LeagueStatisticsPage selectedLeague={selectedLeague} stats={leagueStats} />;
+    return <LeagueStatisticsPage selectedLeague={selectedLeague} stats={leagueStats} refreshedAt={refreshedAt} />;
   }
 
   const [players, matches] = await Promise.all([fetchWorldCupPlayerStats(), fetchWorldCupMatches()]);
@@ -50,6 +51,8 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
           <Metric value={representedTeams} label="Teams represented" />
         </section>
 
+        <FreshnessNote refreshedAt={refreshedAt} />
+
         {players.length ? (
           <div className="mt-12 space-y-14">
             <LeaderSection title="Golden Boot race" eyebrow="Top scorers" players={leaders.goals} stat="goals" statLabel="Goals" accent="emerald" />
@@ -70,7 +73,7 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
   );
 }
 
-function LeagueStatisticsPage({ selectedLeague, stats }: { selectedLeague: SupportedLeague; stats: LeagueStats }) {
+function LeagueStatisticsPage({ selectedLeague, stats, refreshedAt }: { selectedLeague: SupportedLeague; stats: LeagueStats; refreshedAt: Date }) {
   return (
     <main className="min-h-screen bg-[#07120d] text-stone-100">
       <div className="mx-auto max-w-[1440px] px-4 py-5 sm:px-6 lg:px-10">
@@ -96,6 +99,8 @@ function LeagueStatisticsPage({ selectedLeague, stats }: { selectedLeague: Suppo
           <Metric value={stats.goals} label="Goals in window" />
         </section>
 
+        <FreshnessNote refreshedAt={refreshedAt} />
+
         <section className="mt-10 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035]">
             <div className="border-b border-white/10 p-5">
@@ -114,6 +119,23 @@ function LeagueStatisticsPage({ selectedLeague, stats }: { selectedLeague: Suppo
       </div>
     </main>
   );
+}
+
+function FreshnessNote({ refreshedAt }: { refreshedAt: Date }) {
+  return (
+    <div className="mt-4 rounded-2xl border border-emerald-400/15 bg-emerald-400/[0.045] px-4 py-3 text-sm leading-6 text-emerald-50/80">
+      Refreshed from ESPN provider data at {formatRefreshTime(refreshedAt)}. If a table or player total looks behind, it usually means the provider has not published that stat split yet.
+    </div>
+  );
+}
+
+function formatRefreshTime(date: Date) {
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZoneName: 'short',
+  }).format(date);
 }
 
 function StandingsTable({ stats }: { stats: LeagueStats }) {

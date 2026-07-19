@@ -139,10 +139,10 @@ export function getLeagueById(id: string | undefined | null) {
   return supportedLeagues.find((league) => league.id === id) ?? supportedLeagues[0];
 }
 
-async function fetchJson<T>(url: string, revalidate = 30): Promise<T | null> {
+async function fetchJson<T>(url: string, _revalidate = 30): Promise<T | null> {
   try {
     const response = await fetch(url, {
-      next: { revalidate },
+      cache: 'no-store',
       headers: { Accept: 'application/json' },
       signal: AbortSignal.timeout(8_000),
     });
