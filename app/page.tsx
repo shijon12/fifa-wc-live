@@ -5,7 +5,7 @@ import { KnockoutBracket } from '@/components/KnockoutBracket';
 import { MatchDayCenter } from '@/components/MatchDayCenter';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteNav } from '@/components/SiteNav';
-import { fetchWorldCupMatches, fetchWorldCupStandings, type LiveStanding } from '@/lib/liveData';
+import { fetchWorldCupMatches, fetchWorldCupMatchScorers, fetchWorldCupStandings, type LiveStanding } from '@/lib/liveData';
 import { fetchRecentFootballNews, type TeamNewsItem } from '@/lib/teamNews';
 
 export const dynamic = 'force-dynamic';
@@ -20,6 +20,20 @@ export default async function HomePage() {
   const live = matches.filter((match) => /live|half|progress/i.test(match.status)).length;
   const nextMatch = matches.find((match) => match.status === 'Scheduled') ?? matches.at(-1);
   const featuredMatches = matches.filter((match) => match.status === 'Scheduled').slice(0, 6);
+  const matchCards = featuredMatches.length ? featuredMatches : matches.slice(0, 6);
+  const scorersByMatch = Object.fromEntries(
+    await Promise.all(
+      matchCards.map(async (match) => {
+        const totalGoals = (match.homeScore ?? 0) + (match.awayScore ?? 0);
+        if (totalGoals === 0) return [match.id, []] as const;
+        try {
+          return [match.id, await fetchWorldCupMatchScorers(match.id)] as const;
+        } catch {
+          return [match.id, []] as const;
+        }
+      }),
+    ),
+  );
   const groups = groupStandings(standings);
 
   return (
@@ -154,7 +168,7 @@ export default async function HomePage() {
         </section>
 
         <section className="mt-10">
-          <MatchDayCenter matches={featuredMatches.length ? featuredMatches : matches.slice(0, 6)} />
+          <MatchDayCenter matches={matchCards} scorersByMatch={scorersByMatch} />
         </section>
 
         <section className="mt-9 sm:mt-12">

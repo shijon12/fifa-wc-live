@@ -179,6 +179,17 @@ export type MatchTimelineEvent = {
   teamId: string | null;
   team: string | null;
   playerId: string | null;
+  playerName: string | null;
+};
+
+export type MatchGoalScorer = {
+  id: string;
+  minute: string;
+  playerId: string | null;
+  playerName: string;
+  teamId: string | null;
+  team: string | null;
+  detail: string;
 };
 
 export type MatchTeamStatistics = {
@@ -488,6 +499,7 @@ export async function fetchWorldCupMatchDetails(matchId: string): Promise<LiveMa
   const response = await fetchJson<SummaryResponse>(`${ESPN_SITE_API}/summary?event=${encodeURIComponent(matchId)}`, 10);
   const events = (response?.keyEvents ?? []).flatMap((event) => {
     if (!event.id || !event.type?.type) return [];
+    const player = event.participants?.[0]?.athlete;
     return [{
       id: event.id,
       type: event.type.type,
@@ -496,7 +508,8 @@ export async function fetchWorldCupMatchDetails(matchId: string): Promise<LiveMa
       text: event.text ?? event.shortText ?? event.type.text ?? 'Match event',
       teamId: event.team?.id ?? null,
       team: event.team?.displayName ?? null,
-      playerId: event.participants?.[0]?.athlete?.id ?? null,
+      playerId: player?.id ?? null,
+      playerName: player?.displayName ?? null,
     }];
   });
   const commentary = (response?.commentary ?? []).flatMap((entry) =>
@@ -532,6 +545,39 @@ export async function fetchWorldCupMatchDetails(matchId: string): Promise<LiveMa
     });
   });
   return { events, commentary, teamStatistics, players };
+}
+
+function isScoringEvent(event: MatchTimelineEvent) {
+  const type = event.type.toLowerCase();
+  const text = `${event.label} ${event.text}`.toLowerCase();
+  return (
+    type === 'goal' ||
+    type === 'own-goal' ||
+    type === 'penalty---scored' ||
+    (text.includes('goal') && !text.includes('disallowed'))
+  );
+}
+
+function minuteSortValue(minute: string) {
+  const parts = minute.match(/\d+/g)?.map(Number) ?? [];
+  if (!parts.length) return 999;
+  return parts.reduce((total, value) => total + value, 0);
+}
+
+export async function fetchWorldCupMatchScorers(matchId: string): Promise<MatchGoalScorer[]> {
+  const details = await fetchWorldCupMatchDetails(matchId);
+  return details.events
+    .filter(isScoringEvent)
+    .map((event) => ({
+      id: event.id,
+      minute: event.minute,
+      playerId: event.playerId,
+      playerName: event.playerName ?? (event.text.split('(')[0]?.replace(/^Goal!\s*/i, '').trim() || 'Scorer'),
+      teamId: event.teamId,
+      team: event.team,
+      detail: event.label,
+    }))
+    .sort((a, b) => minuteSortValue(a.minute) - minuteSortValue(b.minute));
 }
 
 export type PlayerMatchLogEntry = {
