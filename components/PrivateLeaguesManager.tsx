@@ -36,28 +36,33 @@ export function PrivateLeaguesManager() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState('');
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [leagueLeaderboards, setLeagueLeaderboards] = useState<Record<string, LeaderboardRow[]>>({});
 
   async function load() {
-    const response = await fetch('/api/fantasy/private-leagues');
-    const data = await response.json() as { leagues?: PrivateLeague[]; configured?: boolean };
-    const nextLeagues = data.leagues ?? [];
-    setLeagues(nextLeagues);
-    setConfigured(data.configured !== false);
-    if (nextLeagues.length) {
-      const entries = await Promise.all(nextLeagues.map(async (league) => {
-        try {
-          const leaderboardResponse = await fetch(`/api/fantasy/leaderboard?leagueId=${encodeURIComponent(league.id)}`);
-          if (!leaderboardResponse.ok) return [league.id, []] as const;
-          const leaderboardData = await leaderboardResponse.json() as { leaderboard?: LeaderboardRow[] };
-          return [league.id, leaderboardData.leaderboard ?? []] as const;
-        } catch {
-          return [league.id, []] as const;
-        }
-      }));
-      setLeagueLeaderboards(Object.fromEntries(entries));
-    } else {
-      setLeagueLeaderboards({});
+    try {
+      const response = await fetch('/api/fantasy/private-leagues');
+      const data = await response.json() as { leagues?: PrivateLeague[]; configured?: boolean };
+      const nextLeagues = data.leagues ?? [];
+      setLeagues(nextLeagues);
+      setConfigured(data.configured !== false);
+      if (nextLeagues.length) {
+        const entries = await Promise.all(nextLeagues.map(async (league) => {
+          try {
+            const leaderboardResponse = await fetch(`/api/fantasy/leaderboard?leagueId=${encodeURIComponent(league.id)}`);
+            if (!leaderboardResponse.ok) return [league.id, []] as const;
+            const leaderboardData = await leaderboardResponse.json() as { leaderboard?: LeaderboardRow[] };
+            return [league.id, leaderboardData.leaderboard ?? []] as const;
+          } catch {
+            return [league.id, []] as const;
+          }
+        }));
+        setLeagueLeaderboards(Object.fromEntries(entries));
+      } else {
+        setLeagueLeaderboards({});
+      }
+    } finally {
+      setInitialLoading(false);
     }
   }
 
@@ -156,6 +161,9 @@ export function PrivateLeaguesManager() {
 
       <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
         <h2 className="text-2xl font-black text-white">Your private leagues</h2>
+        {initialLoading ? (
+          <PrivateLeagueSkeleton />
+        ) : (
         <div className="mt-4 space-y-3">
           {leagues.length ? leagues.map((league) => (
             <div key={league.id} className="rounded-2xl border border-white/10 bg-black/20 p-4">
@@ -205,7 +213,18 @@ export function PrivateLeaguesManager() {
             </div>
           )}
         </div>
+        )}
       </section>
+    </div>
+  );
+}
+
+function PrivateLeagueSkeleton() {
+  return (
+    <div className="mt-4 space-y-3">
+      {Array.from({ length: 2 }).map((_, index) => (
+        <div key={index} className="h-40 animate-pulse rounded-2xl border border-white/10 bg-white/[0.04]" />
+      ))}
     </div>
   );
 }

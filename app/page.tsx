@@ -11,6 +11,7 @@ import { fetchRecentFootballNews, type TeamNewsItem } from '@/lib/teamNews';
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
+  const refreshedAt = new Date();
   const [matches, standings, footballNews] = await Promise.all([
     fetchWorldCupMatches(),
     fetchWorldCupStandings(),
@@ -172,7 +173,7 @@ export default async function HomePage() {
         </section>
 
         <section className="mt-10">
-          <MatchDayCenter matches={matchCards} scorersByMatch={scorersByMatch} />
+          <MatchDayCenter matches={matchCards} scorersByMatch={scorersByMatch} refreshedAt={refreshedAt} />
         </section>
 
         <section className="mt-9 sm:mt-12">

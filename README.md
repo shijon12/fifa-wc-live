@@ -130,6 +130,7 @@ This is near-real-time polling, not an official low-latency data stream. Provide
 - [API reference](docs/API.md)
 - [Deployment guide](docs/DEPLOYMENT.md)
 - [Operations, security, and troubleshooting](docs/OPERATIONS.md)
+- [Uptime monitoring](docs/UPTIME_MONITORING.md)
 - [Contributing](CONTRIBUTING.md)
 
 ## Current limitations

@@ -206,6 +206,7 @@ export function FantasyLeagueGame({ matches, players }: { matches: LeagueMatch[]
         <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
           Sync status: {syncStatus === 'loading' ? 'loading account' : syncStatus === 'saving' ? 'saving to account' : syncStatus === 'saved' ? 'saved to your account' : 'local fallback active'}
         </p>
+        {syncStatus === 'loading' && <FantasySyncSkeleton />}
       </section>
 
       <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-2">
@@ -388,6 +389,16 @@ function TabButton({ active, onClick, label, description }: { active: boolean; o
       <span className="block text-sm font-black">{label}</span>
       <span className={`mt-0.5 block text-xs ${active ? 'text-[#07120d]/70' : 'text-stone-600'}`}>{description}</span>
     </button>
+  );
+}
+
+function FantasySyncSkeleton() {
+  return (
+    <div className="mt-4 grid gap-2 sm:grid-cols-3">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div key={index} className="h-10 animate-pulse rounded-full border border-white/10 bg-white/[0.04]" />
+      ))}
+    </div>
   );
 }
 

@@ -103,6 +103,13 @@ export type LeagueStats = {
   bestAttack: LeagueStanding[];
   bestDefense: LeagueStanding[];
   formTable: LeagueStanding[];
+  dataCoverage: {
+    source: 'match-results' | 'provider-standings';
+    completedMatches: number;
+    oldestMatchDate: string | null;
+    newestMatchDate: string | null;
+    isPartialWindow: boolean;
+  };
 };
 
 export type MatchInsight = {
@@ -348,6 +355,23 @@ export async function fetchLeagueStats(league: SupportedLeague): Promise<LeagueS
     bestAttack: [...standings].sort((a, b) => b.goalsFor - a.goalsFor || b.points - a.points).slice(0, 8),
     bestDefense: [...standings].filter((team) => team.played > 0).sort((a, b) => a.goalsAgainst - b.goalsAgainst || b.points - a.points).slice(0, 8),
     formTable: [...standings].sort((a, b) => b.pointsPerMatch - a.pointsPerMatch || b.goalDifference - a.goalDifference).slice(0, 10),
+    dataCoverage: leagueDataCoverage(completed, providerStandings),
+  };
+}
+
+function leagueDataCoverage(completed: LeagueMatch[], providerStandings: LeagueStanding[]): LeagueStats['dataCoverage'] {
+  const sortedCompleted = [...completed].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+  const oldest = sortedCompleted.at(0);
+  const newest = sortedCompleted.at(-1);
+  const providerCompletedEstimate = providerStandings.reduce((total, team) => total + team.played, 0) / 2;
+  const completedMatches = completed.length;
+
+  return {
+    source: completedMatches > 0 ? 'match-results' : 'provider-standings',
+    completedMatches,
+    oldestMatchDate: oldest?.date ?? null,
+    newestMatchDate: newest?.date ?? null,
+    isPartialWindow: providerCompletedEstimate > completedMatches + 2,
   };
 }
 

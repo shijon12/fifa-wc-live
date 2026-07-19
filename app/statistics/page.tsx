@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { DataSourceHealth, SourcePill } from '@/components/DataTrust';
 import { SiteNav } from '@/components/SiteNav';
 import { PlayerImage } from '@/components/PlayerImage';
 import { fetchWorldCupMatches, fetchWorldCupMatchScorers, fetchWorldCupPlayerStats, type LiveMatch, type PlayerTournamentStat } from '@/lib/liveData';
@@ -27,6 +28,12 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
     saves: rank(players, 'saves'),
     yellowCards: rank(players, 'yellowCards'),
   };
+  const healthItems = [
+    { label: 'Match results', status: 'live' as const, detail: `${completedMatches.length} completed matches pulled uncached from the scoreboard feed.` },
+    { label: 'Golden Boot', status: 'derived' as const, detail: 'Goals are rebuilt from match timeline scoring events before player-stat splits are used.' },
+    { label: 'Player stats', status: 'provider' as const, detail: 'Assists, shots, saves, and cards use published ESPN player stat splits.' },
+    { label: 'News', status: 'provider' as const, detail: 'Recent news uses the configured news source with Google News RSS fallback.' },
+  ];
 
   return (
     <main className="min-h-screen bg-[#07120d] text-stone-100">
@@ -53,6 +60,7 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
         </section>
 
         <FreshnessNote refreshedAt={refreshedAt} />
+        <DataSourceHealth items={healthItems} refreshedAt={refreshedAt} />
 
         {players.length ? (
           <div className="mt-12 space-y-14">
@@ -63,14 +71,15 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
               stat="goals"
               statLabel="Goals"
               accent="emerald"
+              source="match timelines"
               note="Goals are counted from match timelines first, so this updates from posted scoring events instead of waiting for slower player-stat splits."
             />
-            <LeaderSection title="Chance creators" eyebrow="Top assists" players={leaders.assists} stat="assists" statLabel="Assists" accent="violet" />
+            <LeaderSection title="Chance creators" eyebrow="Top assists" players={leaders.assists} stat="assists" statLabel="Assists" accent="violet" source="player stat splits" />
             <div className="grid gap-10 xl:grid-cols-2">
-              <CompactLeaders title="Shots on target" players={leaders.shotsOnTarget} stat="shotsOnTarget" />
-              <CompactLeaders title="Goalkeeper saves" players={leaders.saves} stat="saves" />
+              <CompactLeaders title="Shots on target" players={leaders.shotsOnTarget} stat="shotsOnTarget" source="player stat splits" />
+              <CompactLeaders title="Goalkeeper saves" players={leaders.saves} stat="saves" source="player stat splits" />
             </div>
-            <CompactLeaders title="Yellow cards" players={leaders.yellowCards} stat="yellowCards" />
+            <CompactLeaders title="Yellow cards" players={leaders.yellowCards} stat="yellowCards" source="player stat splits" />
           </div>
         ) : (
           <div className="mt-10 rounded-3xl border border-amber-400/20 bg-amber-400/5 p-8 text-amber-100">
@@ -83,6 +92,13 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
 }
 
 function LeagueStatisticsPage({ selectedLeague, stats, refreshedAt }: { selectedLeague: SupportedLeague; stats: LeagueStats; refreshedAt: Date }) {
+  const healthItems = [
+    { label: 'League results', status: stats.dataCoverage.source === 'match-results' ? 'live' as const : 'provider' as const, detail: `${stats.dataCoverage.completedMatches} completed matches in the result-derived window.` },
+    { label: 'Table', status: stats.dataCoverage.source === 'match-results' ? 'derived' as const : 'provider' as const, detail: stats.dataCoverage.source === 'match-results' ? 'Standings are rebuilt from posted scores.' : 'Provider standings are used because result history is unavailable.' },
+    { label: 'Attack/defense', status: stats.dataCoverage.source === 'match-results' ? 'derived' as const : 'provider' as const, detail: 'Goals for, goals against, goal difference, and clean sheets come from completed match results where available.' },
+    { label: 'Coverage', status: stats.dataCoverage.isPartialWindow ? 'limited' as const : 'live' as const, detail: stats.dataCoverage.oldestMatchDate && stats.dataCoverage.newestMatchDate ? `${stats.dataCoverage.oldestMatchDate} to ${stats.dataCoverage.newestMatchDate}.` : 'Provider did not return a usable completed-match window.' },
+  ];
+
   return (
     <main className="min-h-screen bg-[#07120d] text-stone-100">
       <div className="mx-auto max-w-[1440px] px-4 py-5 sm:px-6 lg:px-10">
@@ -109,24 +125,37 @@ function LeagueStatisticsPage({ selectedLeague, stats, refreshedAt }: { selected
         </section>
 
         <FreshnessNote refreshedAt={refreshedAt} />
+        <DataSourceHealth items={healthItems} refreshedAt={refreshedAt} />
+        {stats.dataCoverage.isPartialWindow && <PartialCoverageWarning stats={stats} />}
 
         <section className="mt-10 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035]">
             <div className="border-b border-white/10 p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300">Table</p>
-              <h2 className="mt-2 text-2xl font-black text-white">Current standings</h2>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <h2 className="text-2xl font-black text-white">Current standings</h2>
+                <SourcePill>{stats.dataCoverage.source === 'match-results' ? 'derived from results' : 'provider standings'}</SourcePill>
+              </div>
             </div>
             {stats.standings.length ? <StandingsTable stats={stats} /> : <EmptyStat />}
           </div>
 
           <div className="space-y-6">
-            <LeagueRankCard title="Best attack" teams={stats.bestAttack} value={(team) => team.goalsFor} suffix="GF" />
-            <LeagueRankCard title="Best defense" teams={stats.bestDefense} value={(team) => team.goalsAgainst} suffix="GA" lowerIsBetter />
-            <LeagueRankCard title="Form table" teams={stats.formTable} value={(team) => team.pointsPerMatch} suffix="PPM" />
+            <LeagueRankCard title="Best attack" source="derived from results" teams={stats.bestAttack} value={(team) => team.goalsFor} suffix="GF" />
+            <LeagueRankCard title="Best defense" source="derived from results" teams={stats.bestDefense} value={(team) => team.goalsAgainst} suffix="GA" lowerIsBetter />
+            <LeagueRankCard title="Form table" source="derived from results" teams={stats.formTable} value={(team) => team.pointsPerMatch} suffix="PPM" />
           </div>
         </section>
       </div>
     </main>
+  );
+}
+
+function PartialCoverageWarning({ stats }: { stats: LeagueStats }) {
+  return (
+    <div className="mt-4 rounded-2xl border border-amber-300/25 bg-amber-300/10 p-4 text-sm leading-6 text-amber-100">
+      Showing the freshest completed-match window returned by the provider. The official table may include older matches outside this window, so treat this view as recent result-derived form until the provider exposes the full history.
+    </div>
   );
 }
 
@@ -238,10 +267,13 @@ function LeagueStatPicker({ selectedLeague }: { selectedLeague: SupportedLeague 
   );
 }
 
-function LeagueRankCard({ title, teams, value, suffix, lowerIsBetter = false }: { title: string; teams: LeagueStats['standings']; value: (team: LeagueStats['standings'][number]) => number; suffix: string; lowerIsBetter?: boolean }) {
+function LeagueRankCard({ title, source, teams, value, suffix, lowerIsBetter = false }: { title: string; source: string; teams: LeagueStats['standings']; value: (team: LeagueStats['standings'][number]) => number; suffix: string; lowerIsBetter?: boolean }) {
   return (
     <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
-      <h2 className="text-xl font-black text-white">{title}</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-xl font-black text-white">{title}</h2>
+        <SourcePill>{source}</SourcePill>
+      </div>
       <div className="mt-4 space-y-3">
         {teams.length ? teams.slice(0, 6).map((team, index) => (
           <div key={`${title}-${team.teamId}`} className="flex items-center gap-3">
@@ -341,12 +373,15 @@ function normalizeKey(value: string) {
   return value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
-function LeaderSection({ title, eyebrow, players, stat, statLabel, accent, note }: { title: string; eyebrow: string; players: PlayerTournamentStat[]; stat: NumericPlayerStat; statLabel: string; accent: 'emerald' | 'violet'; note?: string }) {
+function LeaderSection({ title, eyebrow, players, stat, statLabel, accent, source, note }: { title: string; eyebrow: string; players: PlayerTournamentStat[]; stat: NumericPlayerStat; statLabel: string; accent: 'emerald' | 'violet'; source: string; note?: string }) {
   return (
     <section>
       <div className="mb-6">
         <p className={`text-xs font-semibold uppercase tracking-[0.28em] ${accent === 'emerald' ? 'text-emerald-400' : 'text-violet-300'}`}>{eyebrow}</p>
-        <h2 className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">{title}</h2>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">{title}</h2>
+          <SourcePill>{source}</SourcePill>
+        </div>
         {note && <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-500">{note}</p>}
       </div>
       {players.length ? (
@@ -384,10 +419,13 @@ function PlayerCard({ player, rank, value, label, accent }: { player: PlayerTour
   );
 }
 
-function CompactLeaders({ title, players, stat }: { title: string; players: PlayerTournamentStat[]; stat: NumericPlayerStat }) {
+function CompactLeaders({ title, players, stat, source }: { title: string; players: PlayerTournamentStat[]; stat: NumericPlayerStat; source: string }) {
   return (
     <section>
-      <h2 className="mb-4 text-2xl font-bold text-white">{title}</h2>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <h2 className="text-2xl font-bold text-white">{title}</h2>
+        <SourcePill>{source}</SourcePill>
+      </div>
       {players.length ? (
         <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035]">
           {players.slice(0, 8).map((player, index) => (

@@ -4,9 +4,11 @@ import type { LiveMatch, MatchGoalScorer } from '@/lib/liveData';
 export function MatchDayCenter({
   matches,
   scorersByMatch = {},
+  refreshedAt,
 }: {
   matches: LiveMatch[];
   scorersByMatch?: Record<string, MatchGoalScorer[]>;
+  refreshedAt?: Date;
 }) {
   return (
     <section id="matches" className="scroll-mt-6 rounded-[1.5rem] border border-white/10 bg-white/[0.035] p-4 shadow-2xl shadow-black/20 sm:rounded-[2rem] sm:p-7">
@@ -19,6 +21,12 @@ export function MatchDayCenter({
           Live feed • auto-refresh 15s
         </div>
       </div>
+
+      {refreshedAt && (
+        <p className="mb-4 rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-stone-500 sm:inline-flex sm:text-xs">
+          Updated {formatUpdated(refreshedAt)}
+        </p>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-3">
         {matches.map((match) => (
@@ -58,6 +66,14 @@ export function MatchDayCenter({
       )}
     </section>
   );
+}
+
+function formatUpdated(date: Date) {
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  }).format(date);
 }
 
 function ScorersList({

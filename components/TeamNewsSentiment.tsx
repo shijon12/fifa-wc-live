@@ -75,7 +75,7 @@ export function TeamNewsSentiment({ teams }: { teams: string[] }) {
 
       <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-5">
         {loading ? (
-          <p className="text-sm text-stone-400">Loading recent news for {selectedTeam}…</p>
+          <NewsSkeleton selectedTeam={selectedTeam} />
         ) : news ? (
           <>
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -124,6 +124,24 @@ export function TeamNewsSentiment({ teams }: { teams: string[] }) {
         )}
       </div>
     </section>
+  );
+}
+
+function NewsSkeleton({ selectedTeam }: { selectedTeam: string }) {
+  return (
+    <div>
+      <p className="text-sm font-semibold text-stone-400">Loading recent news for {selectedTeam}…</p>
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div key={index} className="h-16 animate-pulse rounded-xl border border-white/10 bg-white/[0.04]" />
+        ))}
+      </div>
+      <div className="mt-5 space-y-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div key={index} className="h-24 animate-pulse rounded-2xl border border-white/10 bg-white/[0.04]" />
+        ))}
+      </div>
+    </div>
   );
 }
 

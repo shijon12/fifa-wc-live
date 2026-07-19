@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import './globals.css';
 import { AnalyticsTracker } from '@/components/AnalyticsTracker';
 import { LiveRefresh } from '@/components/LiveRefresh';
+import { MobileFeedbackButton } from '@/components/MobileFeedbackButton';
 import { NotificationEngine } from '@/components/NotificationEngine';
 import { SessionTimeoutGuard } from '@/components/SessionTimeoutGuard';
 
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <NotificationEngine />
         <SessionTimeoutGuard />
         {children}
+        <MobileFeedbackButton />
       </body>
     </html>
   );

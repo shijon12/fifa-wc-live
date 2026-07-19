@@ -8,6 +8,7 @@ import { fetchWorldCupMatch, fetchWorldCupMatchDetails } from '@/lib/liveData';
 export const dynamic = 'force-dynamic';
 
 export default async function MatchPage({ params }: { params: Promise<{ matchId: string }> }) {
+  const refreshedAt = new Date();
   const { matchId } = await params;
   const [match, details] = await Promise.all([
     fetchWorldCupMatch(matchId),
@@ -46,7 +47,7 @@ export default async function MatchPage({ params }: { params: Promise<{ matchId:
         <section className="mt-5 grid gap-3 sm:grid-cols-3">
           <Info label="Competition" value="FIFA World Cup 2026" />
           <Info label="Stage" value={match.group || match.round} />
-          <Info label="Data source" value="Uncached live provider request" />
+          <Info label="Updated" value={formatUpdated(refreshedAt)} />
         </section>
         <MatchLiveCenter details={details} />
         <PredictionTracker
@@ -62,6 +63,15 @@ export default async function MatchPage({ params }: { params: Promise<{ matchId:
       </div>
     </main>
   );
+}
+
+function formatUpdated(date: Date) {
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZoneName: 'short',
+  }).format(date);
 }
 
 function TeamSide({ id, name, badge, label }: { id: string; name: string; badge: string | null; label: string }) {
