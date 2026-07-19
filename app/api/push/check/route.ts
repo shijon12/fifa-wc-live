@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     );
     const [worldCupMatches, leagueMatches, states, subscriptions] = await Promise.all([
       fetchWorldCupMatches(),
-      Promise.all(alertLeagues.map(fetchLeagueMatches)),
+      Promise.all(alertLeagues.map((league) => fetchLeagueMatches(league))),
       getMatchStates(),
       getPushSubscriptions(),
     ]);

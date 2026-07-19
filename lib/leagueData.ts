@@ -114,6 +114,12 @@ export type MatchInsight = {
   note: string;
 };
 
+type MatchWindowOptions = {
+  daysBack?: number;
+  daysForward?: number;
+  limit?: number;
+};
+
 export const supportedLeagues: SupportedLeague[] = [
   { id: 'world-cup', label: 'FIFA World Cup 2026', shortLabel: 'World Cup', country: 'Global', region: 'International', tier: 'Global', espnSlug: 'fifa.world', accent: 'from-emerald-400/25 to-amber-500/15' },
   { id: 'champions-league', label: 'UEFA Champions League', shortLabel: 'UCL', country: 'Europe', region: 'Europe', tier: 'Europe', espnSlug: 'uefa.champions', accent: 'from-blue-400/25 to-indigo-500/15' },
@@ -261,9 +267,12 @@ function mapEvent(event: EspnEvent, league: SupportedLeague): LeagueMatch | null
   };
 }
 
-export async function fetchLeagueMatches(league: SupportedLeague): Promise<LeagueMatch[]> {
+export async function fetchLeagueMatches(league: SupportedLeague, options: MatchWindowOptions = {}): Promise<LeagueMatch[]> {
+  const daysBack = options.daysBack ?? 10;
+  const daysForward = options.daysForward ?? 45;
+  const limit = options.limit ?? 100;
   const response = await fetchJson<ScoreboardResponse>(
-    `${ESPN_SITE_ROOT}/${league.espnSlug}/scoreboard?dates=${rollingDateRange()}&limit=100`,
+    `${ESPN_SITE_ROOT}/${league.espnSlug}/scoreboard?dates=${rollingDateRange(daysBack, daysForward)}&limit=${limit}`,
   );
   return (response?.events ?? [])
     .map((event) => mapEvent(event, league))
@@ -319,7 +328,11 @@ function mapStanding(entry: StandingEntry, group: string | null): LeagueStanding
 }
 
 export async function fetchLeagueStats(league: SupportedLeague): Promise<LeagueStats> {
-  const [standings, matches] = await Promise.all([fetchLeagueStandings(league), fetchLeagueMatches(league)]);
+  const [providerStandings, matches] = await Promise.all([
+    fetchLeagueStandings(league),
+    fetchLeagueMatches(league, { daysBack: 420, daysForward: 45, limit: 800 }),
+  ]);
+  const standings = deriveLeagueStandingsFromMatches(providerStandings, matches);
   const completed = matches.filter((match) => match.state === 'post');
   const goals = completed.reduce((total, match) => total + (match.homeScore ?? 0) + (match.awayScore ?? 0), 0);
 
@@ -336,6 +349,110 @@ export async function fetchLeagueStats(league: SupportedLeague): Promise<LeagueS
     bestDefense: [...standings].filter((team) => team.played > 0).sort((a, b) => a.goalsAgainst - b.goalsAgainst || b.points - a.points).slice(0, 8),
     formTable: [...standings].sort((a, b) => b.pointsPerMatch - a.pointsPerMatch || b.goalDifference - a.goalDifference).slice(0, 10),
   };
+}
+
+function deriveLeagueStandingsFromMatches(providerStandings: LeagueStanding[], matches: LeagueMatch[]) {
+  const rows = new Map<string, LeagueStanding>();
+
+  for (const standing of providerStandings) {
+    rows.set(standing.teamId, resetStanding(standing));
+  }
+
+  for (const match of matches) {
+    if (!rows.has(match.homeTeamId)) {
+      rows.set(match.homeTeamId, emptyLeagueStanding(match.homeTeamId, match.homeTeam, match.homeBadge, providerStandings.find((team) => team.teamId === match.homeTeamId)?.group ?? null));
+    }
+    if (!rows.has(match.awayTeamId)) {
+      rows.set(match.awayTeamId, emptyLeagueStanding(match.awayTeamId, match.awayTeam, match.awayBadge, providerStandings.find((team) => team.teamId === match.awayTeamId)?.group ?? null));
+    }
+
+    if (match.state !== 'post' || match.homeScore === null || match.awayScore === null) continue;
+
+    const home = rows.get(match.homeTeamId);
+    const away = rows.get(match.awayTeamId);
+    if (!home || !away) continue;
+
+    applyLeagueResult(home, match.homeScore, match.awayScore);
+    applyLeagueResult(away, match.awayScore, match.homeScore);
+  }
+
+  const derived = Array.from(rows.values()).filter((team) => team.played > 0 || providerStandings.some((standing) => standing.teamId === team.teamId));
+  if (!derived.some((team) => team.played > 0)) return providerStandings;
+
+  return Object.values(
+    derived.reduce<Record<string, LeagueStanding[]>>((groups, standing) => {
+      const groupKey = standing.group ?? 'league';
+      groups[groupKey] = [...(groups[groupKey] ?? []), standing];
+      return groups;
+    }, {}),
+  ).flatMap((groupRows) =>
+    groupRows
+      .sort((a, b) =>
+        b.points - a.points ||
+        b.goalDifference - a.goalDifference ||
+        b.goalsFor - a.goalsFor ||
+        a.team.localeCompare(b.team),
+      )
+      .map((team, index) => ({ ...team, rank: index + 1 })),
+  );
+}
+
+function resetStanding(standing: LeagueStanding): LeagueStanding {
+  return {
+    ...standing,
+    rank: 999,
+    played: 0,
+    won: 0,
+    drawn: 0,
+    lost: 0,
+    goalsFor: 0,
+    goalsAgainst: 0,
+    goalDifference: 0,
+    points: 0,
+    pointsPerMatch: 0,
+    cleanSheets: 0,
+  };
+}
+
+function emptyLeagueStanding(teamId: string, team: string, badge: string | null, group: string | null): LeagueStanding {
+  return {
+    teamId,
+    team,
+    shortName: team,
+    badge,
+    group,
+    rank: 999,
+    played: 0,
+    won: 0,
+    drawn: 0,
+    lost: 0,
+    goalsFor: 0,
+    goalsAgainst: 0,
+    goalDifference: 0,
+    points: 0,
+    pointsPerMatch: 0,
+    cleanSheets: 0,
+  };
+}
+
+function applyLeagueResult(row: LeagueStanding, goalsFor: number, goalsAgainst: number) {
+  row.played += 1;
+  row.goalsFor += goalsFor;
+  row.goalsAgainst += goalsAgainst;
+  row.goalDifference = row.goalsFor - row.goalsAgainst;
+  row.cleanSheets += goalsAgainst === 0 ? 1 : 0;
+
+  if (goalsFor > goalsAgainst) {
+    row.won += 1;
+    row.points += 3;
+  } else if (goalsFor < goalsAgainst) {
+    row.lost += 1;
+  } else {
+    row.drawn += 1;
+    row.points += 1;
+  }
+
+  row.pointsPerMatch = Number((row.points / row.played).toFixed(2));
 }
 
 export async function fetchAllLeagueMatches(): Promise<Array<{ league: SupportedLeague; matches: LeagueMatch[] }>> {

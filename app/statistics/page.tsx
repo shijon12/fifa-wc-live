@@ -133,7 +133,7 @@ function LeagueStatisticsPage({ selectedLeague, stats, refreshedAt }: { selected
 function FreshnessNote({ refreshedAt }: { refreshedAt: Date }) {
   return (
     <div className="mt-4 rounded-2xl border border-emerald-400/15 bg-emerald-400/[0.045] px-4 py-3 text-sm leading-6 text-emerald-50/80">
-      Refreshed from ESPN provider data at {formatRefreshTime(refreshedAt)}. If a table or player total looks behind, it usually means the provider has not published that stat split yet.
+      Refreshed from live ESPN provider data at {formatRefreshTime(refreshedAt)}. Tables, scoring, attack, defense, and form are rebuilt from posted match results where available; player-only stats still depend on published stat splits.
     </div>
   );
 }
