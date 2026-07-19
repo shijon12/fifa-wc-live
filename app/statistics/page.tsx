@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { SiteNav } from '@/components/SiteNav';
 import { PlayerImage } from '@/components/PlayerImage';
-import { fetchWorldCupMatches, fetchWorldCupPlayerStats, type PlayerTournamentStat } from '@/lib/liveData';
+import { fetchWorldCupMatches, fetchWorldCupMatchScorers, fetchWorldCupPlayerStats, type LiveMatch, type PlayerTournamentStat } from '@/lib/liveData';
 import { fetchLeagueStats, getLeagueById, supportedLeagues, type LeagueStats, type SupportedLeague } from '@/lib/leagueData';
 
 export const dynamic = 'force-dynamic';
@@ -16,11 +16,12 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
   }
 
   const [players, matches] = await Promise.all([fetchWorldCupPlayerStats(), fetchWorldCupMatches()]);
+  const goalLeaders = await buildGoalLeadersFromMatchEvents(matches, players);
   const completedMatches = matches.filter((match) => /final|full time/i.test(match.status));
   const goals = completedMatches.reduce((total, match) => total + (match.homeScore ?? 0) + (match.awayScore ?? 0), 0);
   const representedTeams = new Set(players.map((player) => player.teamId)).size;
   const leaders = {
-    goals: rank(players, 'goals'),
+    goals: goalLeaders.length ? goalLeaders : rank(players, 'goals'),
     assists: rank(players, 'assists'),
     shotsOnTarget: rank(players, 'shotsOnTarget'),
     saves: rank(players, 'saves'),
@@ -55,7 +56,15 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
 
         {players.length ? (
           <div className="mt-12 space-y-14">
-            <LeaderSection title="Golden Boot race" eyebrow="Top scorers" players={leaders.goals} stat="goals" statLabel="Goals" accent="emerald" />
+            <LeaderSection
+              title="Golden Boot race"
+              eyebrow="Top scorers"
+              players={leaders.goals}
+              stat="goals"
+              statLabel="Goals"
+              accent="emerald"
+              note="Goals are counted from match timelines first, so this updates from posted scoring events instead of waiting for slower player-stat splits."
+            />
             <LeaderSection title="Chance creators" eyebrow="Top assists" players={leaders.assists} stat="assists" statLabel="Assists" accent="violet" />
             <div className="grid gap-10 xl:grid-cols-2">
               <CompactLeaders title="Shots on target" players={leaders.shotsOnTarget} stat="shotsOnTarget" />
@@ -256,12 +265,89 @@ function rank(players: PlayerTournamentStat[], stat: NumericPlayerStat) {
     .slice(0, 10);
 }
 
-function LeaderSection({ title, eyebrow, players, stat, statLabel, accent }: { title: string; eyebrow: string; players: PlayerTournamentStat[]; stat: NumericPlayerStat; statLabel: string; accent: 'emerald' | 'violet' }) {
+async function buildGoalLeadersFromMatchEvents(matches: LiveMatch[], players: PlayerTournamentStat[]) {
+  const playerLookup = new Map<string, PlayerTournamentStat>();
+  const nameTeamLookup = new Map<string, PlayerTournamentStat>();
+  for (const player of players) {
+    playerLookup.set(player.id, player);
+    nameTeamLookup.set(`${normalizeKey(player.name)}:${player.teamId}`, player);
+    nameTeamLookup.set(`${normalizeKey(player.name)}:${normalizeKey(player.team)}`, player);
+  }
+
+  const scoredMatches = matches.filter((match) => {
+    const totalGoals = (match.homeScore ?? 0) + (match.awayScore ?? 0);
+    return totalGoals > 0 && /live|half|progress|final|full time/i.test(match.status);
+  });
+  const scorersByMatch = await Promise.all(scoredMatches.map(async (match) => {
+    try {
+      return { match, scorers: await fetchWorldCupMatchScorers(match.id) };
+    } catch {
+      return { match, scorers: [] };
+    }
+  }));
+  const leaders = new Map<string, PlayerTournamentStat>();
+
+  for (const { match, scorers } of scorersByMatch) {
+    for (const scorer of scorers) {
+      const existingPlayer =
+        (scorer.playerId ? playerLookup.get(scorer.playerId) : undefined) ??
+        nameTeamLookup.get(`${normalizeKey(scorer.playerName)}:${scorer.teamId ?? ''}`) ??
+        nameTeamLookup.get(`${normalizeKey(scorer.playerName)}:${normalizeKey(scorer.team ?? '')}`);
+      const key = existingPlayer?.id ?? scorer.playerId ?? `${normalizeKey(scorer.playerName)}:${scorer.teamId ?? normalizeKey(scorer.team ?? '')}`;
+      const current = leaders.get(key);
+
+      if (current) {
+        current.goals += 1;
+        current.appearances = Math.max(current.appearances, existingPlayer?.appearances ?? current.appearances);
+        continue;
+      }
+
+      const teamLogo = existingPlayer?.teamLogo ??
+        (scorer.teamId === match.homeTeamId ? match.homeBadge : scorer.teamId === match.awayTeamId ? match.awayBadge : null);
+      leaders.set(key, {
+        id: existingPlayer?.id ?? scorer.playerId ?? key,
+        name: existingPlayer?.name ?? scorer.playerName,
+        shortName: existingPlayer?.shortName ?? scorer.playerName,
+        headshot: existingPlayer?.headshot ?? null,
+        teamId: existingPlayer?.teamId ?? scorer.teamId ?? '',
+        team: existingPlayer?.team ?? scorer.team ?? 'Team unavailable',
+        teamLogo,
+        position: existingPlayer?.position ?? 'Player',
+        jersey: existingPlayer?.jersey ?? null,
+        age: existingPlayer?.age ?? null,
+        height: existingPlayer?.height ?? null,
+        weight: existingPlayer?.weight ?? null,
+        citizenship: existingPlayer?.citizenship ?? null,
+        appearances: existingPlayer?.appearances ?? 0,
+        goals: 1,
+        assists: existingPlayer?.assists ?? 0,
+        shots: existingPlayer?.shots ?? 0,
+        shotsOnTarget: existingPlayer?.shotsOnTarget ?? 0,
+        yellowCards: existingPlayer?.yellowCards ?? 0,
+        redCards: existingPlayer?.redCards ?? 0,
+        saves: existingPlayer?.saves ?? 0,
+        profileUrl: existingPlayer?.profileUrl ?? null,
+      });
+    }
+  }
+
+  return Array.from(leaders.values())
+    .filter((player) => player.goals > 0)
+    .sort((a, b) => b.goals - a.goals || b.assists - a.assists || a.name.localeCompare(b.name))
+    .slice(0, 10);
+}
+
+function normalizeKey(value: string) {
+  return value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function LeaderSection({ title, eyebrow, players, stat, statLabel, accent, note }: { title: string; eyebrow: string; players: PlayerTournamentStat[]; stat: NumericPlayerStat; statLabel: string; accent: 'emerald' | 'violet'; note?: string }) {
   return (
     <section>
       <div className="mb-6">
         <p className={`text-xs font-semibold uppercase tracking-[0.28em] ${accent === 'emerald' ? 'text-emerald-400' : 'text-violet-300'}`}>{eyebrow}</p>
         <h2 className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">{title}</h2>
+        {note && <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-500">{note}</p>}
       </div>
       {players.length ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
