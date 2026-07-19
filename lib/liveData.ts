@@ -361,12 +361,15 @@ export async function fetchWorldCupMatches(): Promise<LiveMatch[]> {
 }
 
 export async function fetchWorldCupStandings(): Promise<LiveStanding[]> {
-  const response = await fetchJson<StandingsResponse>(
-    `${ESPN_WEB_API}/standings?region=us&lang=en&contentorigin=espn&isqualified=true&season=2026&sort=rank:asc`,
-  );
+  const [response, matches] = await Promise.all([
+    fetchJson<StandingsResponse>(
+      `${ESPN_WEB_API}/standings?region=us&lang=en&contentorigin=espn&isqualified=true&season=2026&sort=rank:asc`,
+    ),
+    fetchWorldCupMatches(),
+  ]);
   const updatedAt = new Date().toISOString();
 
-  return (response?.children ?? []).flatMap((group) => {
+  const providerStandings = (response?.children ?? []).flatMap((group) => {
     const groupCode = group.name?.replace(/^Group\s+/i, '').toUpperCase();
     if (!groupCode) return [];
 
@@ -394,6 +397,108 @@ export async function fetchWorldCupStandings(): Promise<LiveStanding[]> {
       }];
     });
   });
+
+  return deriveWorldCupStandingsFromMatches(providerStandings, matches, updatedAt);
+}
+
+function deriveWorldCupStandingsFromMatches(providerStandings: LiveStanding[], matches: LiveMatch[], updatedAt: string) {
+  const rows = new Map<string, LiveStanding>();
+
+  for (const standing of providerStandings) {
+    rows.set(standing.teamId, {
+      ...standing,
+      played: 0,
+      won: 0,
+      drawn: 0,
+      lost: 0,
+      goalsFor: 0,
+      goalsAgainst: 0,
+      goalDifference: 0,
+      points: 0,
+      form: '',
+      updatedAt,
+    });
+  }
+
+  for (const match of matches) {
+    const groupCode = match.group?.replace(/^Group\s+/i, '').toUpperCase();
+    if (groupCode) {
+      if (!rows.has(match.homeTeamId)) {
+        rows.set(match.homeTeamId, emptyStanding(match.homeTeamId, match.homeTeam, match.homeBadge, groupCode, updatedAt));
+      }
+      if (!rows.has(match.awayTeamId)) {
+        rows.set(match.awayTeamId, emptyStanding(match.awayTeamId, match.awayTeam, match.awayBadge, groupCode, updatedAt));
+      }
+    }
+
+    if (!groupCode || !/final|full time/i.test(match.status) || match.homeScore === null || match.awayScore === null) {
+      continue;
+    }
+
+    const home = rows.get(match.homeTeamId);
+    const away = rows.get(match.awayTeamId);
+    if (!home || !away) continue;
+
+    applyResult(home, match.homeScore, match.awayScore);
+    applyResult(away, match.awayScore, match.homeScore);
+  }
+
+  const derived = Array.from(rows.values());
+  if (!derived.length) return providerStandings;
+
+  return Object.values(
+    derived.reduce<Record<string, LiveStanding[]>>((groups, standing) => {
+      groups[standing.group] = [...(groups[standing.group] ?? []), standing];
+      return groups;
+    }, {}),
+  ).flatMap((groupRows) =>
+    groupRows
+      .sort((a, b) =>
+        b.points - a.points ||
+        b.goalDifference - a.goalDifference ||
+        b.goalsFor - a.goalsFor ||
+        a.team.localeCompare(b.team),
+      )
+      .map((standing, index) => ({ ...standing, rank: index + 1 })),
+  );
+}
+
+function emptyStanding(teamId: string, team: string, badge: string | null, group: string, updatedAt: string): LiveStanding {
+  return {
+    teamId,
+    team,
+    badge,
+    group,
+    rank: 999,
+    played: 0,
+    won: 0,
+    drawn: 0,
+    lost: 0,
+    goalsFor: 0,
+    goalsAgainst: 0,
+    goalDifference: 0,
+    points: 0,
+    form: '',
+    qualification: null,
+    updatedAt,
+  };
+}
+
+function applyResult(row: LiveStanding, goalsFor: number, goalsAgainst: number) {
+  row.played += 1;
+  row.goalsFor += goalsFor;
+  row.goalsAgainst += goalsAgainst;
+  row.goalDifference = row.goalsFor - row.goalsAgainst;
+
+  if (goalsFor > goalsAgainst) {
+    row.won += 1;
+    row.points += 3;
+  } else if (goalsFor < goalsAgainst) {
+    row.lost += 1;
+  } else {
+    row.drawn += 1;
+    row.points += 1;
+  }
 }
 
 export async function fetchWorldCupTeam(teamId: string): Promise<LiveTeam | null> {
@@ -492,7 +597,35 @@ export async function fetchWorldCupPlayerStats(): Promise<PlayerTournamentStat[]
 
 export async function fetchWorldCupPlayer(playerId: string): Promise<PlayerTournamentStat | null> {
   const players = await fetchWorldCupPlayerStats();
-  return players.find((player) => player.id === playerId) ?? null;
+  const player = players.find((entry) => entry.id === playerId);
+  if (!player) return null;
+  const eventGoals = await fetchPlayerEventGoals(player);
+  return eventGoals > 0 ? { ...player, goals: eventGoals } : player;
+}
+
+async function fetchPlayerEventGoals(player: PlayerTournamentStat) {
+  const matches = (await fetchWorldCupMatches()).filter((match) =>
+    (match.homeTeamId === player.teamId || match.awayTeamId === player.teamId) &&
+    ((match.homeScore ?? 0) + (match.awayScore ?? 0)) > 0 &&
+    /live|half|progress|final|full time/i.test(match.status),
+  );
+  const scorerResults = await Promise.all(matches.map(async (match) => {
+    try {
+      return fetchWorldCupMatchScorers(match.id);
+    } catch {
+      return [];
+    }
+  }));
+
+  const normalizedPlayerName = normalizePersonName(player.name);
+  return scorerResults.flat().filter((scorer) =>
+    scorer.playerId === player.id ||
+    (scorer.teamId === player.teamId && normalizePersonName(scorer.playerName) === normalizedPlayerName),
+  ).length;
+}
+
+function normalizePersonName(value: string) {
+  return value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 export async function fetchWorldCupMatchDetails(matchId: string): Promise<LiveMatchDetails> {
