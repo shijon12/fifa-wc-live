@@ -17,6 +17,7 @@ A responsive FIFA World Cup 2026 tracker built with Next.js. It presents near-re
 - ESPN headshots with a TheSportsDB image fallback
 - Device-local favorite teams
 - Background Web Push notifications for kickoff, goals, and full time
+- Weekly football newsletter subscriptions and optional digest sending
 - Side-by-side team comparison
 - Optional OpenAI match forecasts and team analysis
 - Device-local prediction history and accuracy tracking
@@ -78,6 +79,8 @@ Football data works without environment variables. Leave `OPENAI_API_KEY` empty 
 | `VAPID_PRIVATE_KEY` | For push | Server-only Web Push signing key |
 | `VAPID_SUBJECT` | For push | Contact URL or `mailto:` address |
 | `CRON_SECRET` | For push | Protects the scheduled delivery endpoint |
+| `RESEND_API_KEY` | For newsletter sending | Optional Resend API key for weekly digest delivery |
+| `NEWSLETTER_FROM_EMAIL` | For newsletter sending | Verified sender, for example `The Matchroom <newsletter@example.com>` |
 
 Never expose `OPENAI_API_KEY` to browser code or commit `.env.local`. `AI_ACCESS_CODE` is not an API key and does not provide OpenAI credits.
 
@@ -119,6 +122,8 @@ Server-rendered pages request the current tournament feed through `lib/liveData.
 - Fallback player images: 24 hours
 
 Open pages call `router.refresh()` every 15 seconds. Supabase Cron invokes the protected push checker every minute; a service worker receives alerts even when the site is closed.
+
+Newsletter subscriptions are stored in Supabase. Weekly digest sending is disabled until `RESEND_API_KEY` and `NEWSLETTER_FROM_EMAIL` are configured. Trigger `POST /api/newsletter/send` with `x-cron-secret: <CRON_SECRET>` from a weekly cron job to send the digest.
 
 This is near-real-time polling, not an official low-latency data stream. Provider updates, caching, network conditions, and browser throttling can introduce delay.
 

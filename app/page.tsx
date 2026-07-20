@@ -3,6 +3,7 @@ import { FantasyLeagueSimulation } from '@/components/FantasyLeagueSimulation';
 import { FeedbackForm } from '@/components/FeedbackForm';
 import { KnockoutBracket } from '@/components/KnockoutBracket';
 import { MatchDayCenter } from '@/components/MatchDayCenter';
+import { NewsletterSignup } from '@/components/NewsletterSignup';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteNav } from '@/components/SiteNav';
 import { fetchWorldCupMatches, fetchWorldCupMatchScorers, fetchWorldCupStandings, type LiveStanding } from '@/lib/liveData';
@@ -138,6 +139,10 @@ export default async function HomePage() {
         </section>
 
         <RecentFootballNews items={footballNews} />
+
+        <section className="mt-8 sm:mt-10">
+          <NewsletterSignup />
+        </section>
 
         <section className="mt-8 rounded-[1.5rem] border border-emerald-400/20 bg-[radial-gradient(circle_at_85%_10%,rgba(52,211,153,0.14),transparent_32%),rgba(16,185,129,0.08)] p-5 sm:mt-10 sm:rounded-[2rem] sm:p-7">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-300">For the group chat</p>

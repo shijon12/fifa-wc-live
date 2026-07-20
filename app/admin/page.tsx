@@ -3,6 +3,7 @@ import { SiteNav } from '@/components/SiteNav';
 import { getCurrentUser } from '@/lib/auth';
 import { getGrowthSummary } from '@/lib/growth';
 import { listModerationReports } from '@/lib/moderation';
+import { getNewsletterSummary } from '@/lib/newsletter';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,9 +11,10 @@ export default async function AdminPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/sign-in?next=/admin');
   if (user.role !== 'admin') redirect('/account');
-  const [{ reports, configured }, growth] = await Promise.all([
+  const [{ reports, configured }, growth, newsletter] = await Promise.all([
     listModerationReports(),
     getGrowthSummary(),
+    getNewsletterSummary(),
   ]);
 
   return (
@@ -46,6 +48,7 @@ export default async function AdminPage() {
           <GrowthMetric label="Private leagues" value={growth.privateLeagues} />
           <GrowthMetric label="Notification opt-ins" value={growth.notificationOptIns} />
           <GrowthMetric label="Feedback notes" value={growth.waitlistCount} />
+          <GrowthMetric label="Newsletter subscribers" value={newsletter.count} />
         </section>
 
         <section className="mt-8 grid gap-5 lg:grid-cols-2">
@@ -76,6 +79,28 @@ export default async function AdminPage() {
               )) : <p className="text-sm text-stone-500">No feedback yet.</p>}
             </div>
           </div>
+        </section>
+
+        <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.035] p-5">
+          <h2 className="text-2xl font-black text-white">Newsletter subscribers</h2>
+          {!newsletter.configured ? (
+            <p className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-100">
+              Newsletter storage needs the Supabase newsletter migration before subscribers can persist.
+            </p>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {newsletter.recent.length ? newsletter.recent.slice(0, 8).map((subscriber) => (
+                <article key={subscriber.id} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="font-bold text-white">{subscriber.name || subscriber.email}</p>
+                    <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-bold uppercase text-emerald-300">{subscriber.status}</span>
+                  </div>
+                  <p className="mt-2 text-sm text-stone-500">{subscriber.email}{subscriber.favorite_team ? ` · ${subscriber.favorite_team}` : ''}</p>
+                  <p className="mt-2 text-xs text-stone-600">Joined {new Date(subscriber.subscribed_at).toLocaleString()} · {subscriber.source_path}</p>
+                </article>
+              )) : <p className="text-sm text-stone-500">No newsletter subscribers yet.</p>}
+            </div>
+          )}
         </section>
 
         <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.035] p-5">
