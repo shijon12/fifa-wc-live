@@ -7,28 +7,28 @@ const STORAGE_KEY = 'matchroom-onboarding-dismissed-v1';
 
 const steps = [
   {
-    title: 'Follow your teams',
-    body: 'Pick the teams you care about so alerts and shortcuts feel personal.',
-    href: '/favorites',
-    action: 'Choose teams',
-  },
-  {
-    title: 'Create or join a room',
-    body: 'Start a private league for your group chat or join one with an invite code.',
-    href: '/fantasy/leagues',
-    action: 'Open rooms',
-  },
-  {
     title: 'Build your squad',
-    body: 'Select your XI, stay under budget, and choose a captain for double points.',
+    body: 'Pick 15 players, choose your starting XI, captain, and vice-captain.',
     href: '/fantasy?tab=squad',
     action: 'Build squad',
   },
   {
-    title: 'Turn on alerts',
-    body: 'Get kickoff, goal, and final-score notifications when you cannot watch live.',
-    href: '/favorites',
-    action: 'Enable alerts',
+    title: 'Create or join a room',
+    body: 'Start a private league for your group chat or join one with an invite code.',
+    href: '/fantasy?tab=leagues',
+    action: 'Open rooms',
+  },
+  {
+    title: 'Invite friends',
+    body: 'Share the room link. Friends see the room before they are asked to sign in.',
+    href: '/fantasy?tab=leagues',
+    action: 'Share invite',
+  },
+  {
+    title: 'Return on matchday',
+    body: 'Check the room table, talk football, and follow live scores together.',
+    href: '/fantasy?tab=leagues',
+    action: 'Open matchroom',
   },
 ];
 

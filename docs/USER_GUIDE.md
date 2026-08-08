@@ -101,15 +101,14 @@ Open **Compare**, choose two different teams, and review:
 
 The statistical comparison works without OpenAI.
 
-If AI is configured, enter the shared AI access code and select **Generate AI forecast**. The code is stored only in `sessionStorage`, so it is cleared when the browser session ends.
+If AI is configured, a signed-in user can select **Generate AI forecast**. The forecast consumes one message from the account's daily AI allowance.
 
 ## AI prediction tracker
 
 Before a match is complete:
 
-1. Open the match center.
-2. Enter the shared AI access code.
-3. Select **Generate AI prediction**.
+1. Sign in and open the match center.
+2. Select **Generate AI prediction**.
 
 The generated forecast contains outcome probabilities, predicted score, confidence, summary, and supporting factors. It is saved in the current browser.
 
@@ -118,12 +117,45 @@ Open **Predictions** to see saved forecasts and accuracy. Once a tracked match h
 AI forecasts:
 
 - Require an enabled OpenAI API key and credits
+- Require a signed-in account
+- Share the controlled daily allowance with the fantasy agent
 - Are probabilistic
-- Use only the live match and standings context supplied by the application
+- Use only the current match context supplied by the application
 - Are not betting advice
+
+## Multi-league prediction desk
+
+Open **Predictions**, then select a competition from the league dropdown. The page requests fixtures only for that competition and shows its next published matches. Select a fixture and choose **Generate AI forecast**.
+
+The three outcome cards show the estimated chance of a home win, draw, and away win. A value of 42% means approximately 42 out of 100 similar situations; it is not a payout, wager, or guarantee. The model lean and predicted scoreline summarize the most likely scenario while the explanation lists the current evidence used.
+
+Refreshing a forecast creates another timestamped probability snapshot. The movement chart plots those real saved snapshots so users can see whether the model view changes as kickoff approaches. One snapshot appears as a single flat observation and is labeled accordingly.
 
 ## Mobile use
 
-The navigation becomes a compact two-row grid on phones. Wide tables and the bracket scroll inside their own panels without widening the entire page.
+The navigation keeps Fantasy, private Rooms, and Matches visible as the primary journey. Statistics, predictions, followed teams, comparison, account, and informational pages remain available from the compact More menu. Wide tables and the bracket scroll inside their own panels without widening the entire page.
 
 If an older mobile layout is cached after a deployment, close and reopen the tab or perform a hard refresh.
+# Fantasy virtual agent
+
+Open **Fantasy**, select **Squad**, and choose **Open agent**, then chat naturally. For example, ask it to build a balanced XI, find a lower-cost midfielder, replace a selected forward, review the current team, or choose a captain.
+
+The agent uses the current fantasy player pool and can carry out multi-step searches and squad planning. Requests to build or improve an XI are executed by The Matchroom's own optimizer, which evaluates player output, reliability, discipline, value, current picks, budget, preferences, locks, exclusions, transfer limits, and captaincy. Every result then passes through a separate rules harness that checks the 100-unit budget, 11-player formation, maximum of three players from one team, and captain selection. A proposed change appears in a review card. Select **Apply proposal** to update the squad or **Dismiss** to leave it unchanged. The agent cannot save changes without this approval.
+
+The chat requires a signed-in account plus an enabled server-side OpenAI API key and API credits. Each account receives a limited daily allowance. The OpenAI request uses `store: false`; the displayed conversation remains in the current page session and is not written to the application database. Supabase stores only the daily request count used to enforce the allowance.
+
+# Gameweeks, transfers, substitutions, and chips
+
+The **Squad** tab shows the open gameweek deadline, free transfers, pending transfers, and any projected point deduction. Managers receive one free transfer each gameweek and can bank up to five. Each additional transfer costs four points. Squad edits save as a draft; the final saved squad is compared with the previous gameweek at the deadline, so an edit that is reverted before the deadline is not charged.
+
+After an account save succeeds, the page displays **Saved for GW…** with the save time and deadline-lock explanation. An offline state explicitly warns that changes are only on the current device.
+
+Choose 11 starters, a captain, a vice-captain, and order the four substitutes with the arrow controls. After a gameweek finishes, the engine applies valid automatic substitutions in bench order, moves the vice-captain into captaincy when required, and records gross points, transfer deductions, bench points, the effective lineup, and net points in gameweek history. Official FPL event totals naturally include double-gameweek fixtures and give zero fixture points in blank gameweeks.
+
+Wildcard, Free Hit, Bench Boost, and Triple Captain are available once in each half of the season. Only one chip can be active for a gameweek. Free Hit restores the previous permanent squad after scoring; Bench Boost scores all substitutes; Triple Captain applies a three-times multiplier.
+
+Fantasy and prediction leaderboards are separate competitions. Fantasy rankings contain only official gameweek squad scores; prediction rankings contain only match-result pick scores.
+
+# Private league chat
+
+Open **Fantasy → Private leagues**, find a room, and select **Open chat**. Only signed-in members of that private league can read or send messages. The chat refreshes while open and stops requesting messages when closed.

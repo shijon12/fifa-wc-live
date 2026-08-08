@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { DataTimestamp } from '@/components/DataTimestamp';
 
 type NewsItem = {
   title: string;
@@ -78,6 +79,7 @@ export function TeamNewsSentiment({ teams }: { teams: string[] }) {
           <NewsSkeleton selectedTeam={selectedTeam} />
         ) : news ? (
           <>
+            <DataTimestamp updatedAt={news.generatedAt} label={`${news.team} news`} />
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm leading-6 text-stone-300">{news.sentiment.summary}</p>
               <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${sentimentClass(news.sentiment.label)}`}>

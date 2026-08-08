@@ -1,23 +1,90 @@
 # API reference
 
+## `GET /api/fantasy/private-leagues/:leagueId/messages`
+
+Returns up to 100 recent room messages in chronological order. The requester must be signed in and belong to the private league.
+
+## `POST /api/fantasy/private-leagues/:leagueId/messages`
+
+Posts a message to a private league. The JSON body is `{ "body": "..." }`. Messages are whitespace-normalized, limited to 500 characters, membership-gated, and rate-limited to 20 posts per minute per user and client.
+
+## `POST /api/fantasy/agent`
+
+Runs the signed-in manager's conversational fantasy agent. The route requires the normal authentication session. The JSON body contains the new message, up to ten prior chat turns, the current squad, and the manager name.
+
+```json
+{
+  "message": "Replace my weakest forward with a higher-upside option",
+  "history": [],
+  "squad": { "playerIds": ["player-ids"], "captainId": "player-id" },
+  "managerName": "Matchroom Manager"
+}
+```
+
+The OpenAI model can call only the tools exposed by the fantasy harness: squad inspection, live-player search, valid squad construction, same-position replacement, captain selection, and custom-XI proposal. A successful write request returns a pending action:
+
+```json
+{
+  "reply": "I found a higher-upside replacement. Review the transfer below.",
+  "action": {
+    "type": "apply_squad",
+    "title": "Fantasy transfer",
+    "summary": "Player A out, Player B in.",
+    "squad": { "playerIds": ["validated-player-ids"], "captainId": "player-id" },
+    "changes": ["Remove: Player A", "Add: Player B"],
+    "cost": 96.4,
+    "projectedPoints": 112
+  },
+  "model": "gpt-5.6-sol"
+}
+```
+
+The action is not persisted by this route. The client must show it for review and only submit it through the fantasy profile route after explicit user confirmation. Responses API storage is disabled with `store: false`. The response also includes the user's remaining daily allowance. Supabase stores the UTC-day request count but no chat content.
+
+## `GET /api/fantasy/game`
+
+Returns the signed-in manager's active gameweek, deadline, free-transfer balance, pending transfers, projected deduction, selected chip, chip history, and finalized or live gameweek score history. Reading the dashboard also catches up any deadline or finalized-event work that is safe to process for that manager.
+
+## `POST /api/fantasy/game`
+
+Activates or cancels one of `wildcard`, `free_hit`, `bench_boost`, or `triple_captain` for the open gameweek. The server rejects expired deadlines, duplicate half-season use, simultaneous chips, and consecutive Free Hits.
+
+## `GET /api/fantasy/gameweek/process`
+
+Protected scheduled endpoint used by Supabase Cron. It snapshots deadline-ready squads and finalizes completed official gameweeks. It requires `Authorization: Bearer <CRON_SECRET>` and is not callable by a normal browser session.
+
+## `POST /api/admin/gameweek-simulation`
+
+Admin-only, write-free scoring simulation. It verifies non-playing starters, bench order, vice-captain promotion, transfer deductions, Wildcard, Free Hit, Bench Boost, Triple Captain, double gameweeks, and blanks. The scheduled processor runs the same safety suite before every production pass.
+
+## `POST /api/predictions/leagues/:leagueId/:matchId`
+
+Generates a structured pre-match AI forecast for an upcoming fixture in a supported league. The requester must be signed in. `leagueId` is an application league ID such as `premier-league`, and `matchId` is the provider event ID shown in the current league feed.
+
+The route resolves both identifiers server-side, rejects live or completed matches, loads standings and recent relevant results, applies the per-user daily AI allowance, and returns normalized home/draw/away probabilities totaling exactly 100. The browser stores successive results as forecast snapshots for the movement chart.
+
+Status codes include `401` for a signed-out user, `404` for an unsupported league or missing fixture, `409` after kickoff, `429` for short-window or daily limits, `502` for an OpenAI failure, and `503` when AI configuration is unavailable.
+
 All routes are relative to the application origin and return JSON.
 
 ## Authentication model
 
-Only AI endpoints use application-level authorization. In production, send:
+Fantasy-agent and prediction endpoints require a signed-in application account and consume the persistent per-user daily AI allowance. The standalone team-comparison endpoint remains protected by:
 
 ```http
 x-ai-access-code: your-shared-code
 ```
 
-The shared code must match `AI_ACCESS_CODE`. It protects OpenAI spend but is not a user account or API credential.
+The shared code must match `AI_ACCESS_CODE`. It protects that legacy comparison endpoint but is not a user account or API credential.
 
 ## Rate limits
 
 | Endpoint | Limit |
 | --- | ---: |
-| `POST /api/predictions/[matchId]` | 5 requests/minute/IP |
+| `POST /api/predictions/[matchId]` | 8 requests/minute/user/IP |
 | `POST /api/compare` | 5 requests/minute/IP |
+| `POST /api/fantasy/agent` | 12 requests/minute/user/IP |
+| `POST /api/predictions/leagues/[leagueId]/[matchId]` | 8 requests/minute/user/IP |
 | `GET /api/live-snapshot` | 10 requests/minute/IP |
 | `GET /api/player-image` | 30 requests/minute/IP |
 | `POST /api/push/subscriptions` | 12 requests/minute/IP |

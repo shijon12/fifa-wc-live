@@ -14,7 +14,7 @@ const dataSources = [
   ['Recent news', 'Team and football news use a configurable paid news provider when present, with Google News RSS as the fallback. Headlines are sorted newest-first.'],
   ['Accounts and feedback', 'Supabase stores users, Google sign-in, fantasy/private-league data, feedback, waitlist interest, and anonymous product analytics.'],
   ['Notifications', 'Browser Push API, VAPID keys, a service worker, Supabase storage, and scheduled checks power kickoff, goal, and full-time alerts.'],
-  ['AI forecasts', 'The prediction layer is built around the OpenAI Responses API, but the live AI forecast feature remains gated until API credits are enabled.'],
+  ['AI forecasts', 'The prediction desk uses the OpenAI Responses API with current fixtures, standings, published records, and recent results. Signed-in users receive a controlled daily allowance.'],
 ];
 
 export default function AboutPage() {

@@ -5,20 +5,20 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 const primaryLinks = [
-  { href: '/', label: 'Live' },
-  { href: '/statistics', label: 'Stats' },
   { href: '/fantasy', label: 'Fantasy' },
-  { href: '/predictions', label: 'Predictions' },
+  { href: '/fantasy/leagues', label: 'Rooms' },
+  { href: '/leagues', label: 'Matches' },
 ];
 
 const secondaryLinks = [
-  { href: '/leagues', label: 'Leagues' },
-  { href: '/about', label: 'About' },
-  { href: '/changelog', label: 'Updates' },
-  { href: '/about#feedback', label: 'Feedback' },
+  { href: '/statistics', label: 'Statistics' },
+  { href: '/predictions', label: 'Predictions' },
   { href: '/favorites', label: 'My Teams' },
   { href: '/compare', label: 'Compare' },
   { href: '/account', label: 'Account' },
+  { href: '/about', label: 'About' },
+  { href: '/changelog', label: 'Updates' },
+  { href: '/about#feedback', label: 'Feedback' },
 ];
 
 export function SiteNav() {
@@ -46,20 +46,37 @@ export function SiteNav() {
           </span>
         </Link>
 
-        <div className="grid min-w-0 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end">
-          <div className="grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-white/[0.035] p-1 sm:flex sm:rounded-full">
+        <div className="min-w-0">
+          <div className="grid min-w-0 grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-white/[0.035] p-1 sm:flex sm:rounded-full">
             {primaryLinks.map((link) => (
-              <NavLink key={link.href} href={link.href} label={link.label} active={isActive(pathname, hash, link.href)} primary />
+              <NavLink key={link.href} href={link.href} label={link.label} active={isActive(pathname, hash, link.href, true)} primary />
             ))}
-          </div>
-          <div className="grid grid-cols-3 gap-1 sm:flex sm:flex-wrap">
-            {secondaryLinks.map((link) => (
-              <NavLink key={link.href} href={link.href} label={link.label} active={isActive(pathname, hash, link.href)} />
-            ))}
+            <MoreMenu pathname={pathname} hash={hash} />
           </div>
         </div>
       </div>
     </nav>
+  );
+}
+
+function MoreMenu({ pathname, hash }: { pathname: string; hash: string }) {
+  const active = secondaryLinks.some((link) => isActive(pathname, hash, link.href));
+
+  return (
+    <details className="group relative min-w-0">
+      <summary
+        className={`cursor-pointer list-none truncate rounded-full px-1.5 py-2 text-center text-xs font-semibold transition marker:content-none sm:px-3 sm:text-sm ${
+          active ? 'bg-emerald-400 text-[#07120d] shadow-lg shadow-emerald-950/20' : 'text-stone-200 hover:bg-white/10 hover:text-white'
+        }`}
+      >
+        More
+      </summary>
+      <div className="absolute right-0 top-[calc(100%+0.55rem)] z-50 grid w-48 gap-1 rounded-2xl border border-white/10 bg-[#0b1b13] p-2 shadow-2xl shadow-black/50">
+        {secondaryLinks.map((link) => (
+          <NavLink key={link.href} href={link.href} label={link.label} active={isActive(pathname, hash, link.href)} />
+        ))}
+      </div>
+    </details>
   );
 }
 
@@ -68,8 +85,8 @@ function NavLink({ href, label, active, primary = false }: { href: string; label
     <Link
       href={href}
       aria-current={active ? 'page' : undefined}
-      className={`rounded-full px-2.5 py-2 text-center transition sm:px-3 ${
-        primary ? 'text-sm font-semibold' : 'text-xs font-medium'
+      className={`min-w-0 truncate rounded-full px-1.5 py-2 text-center transition sm:px-3 ${
+        primary ? 'text-xs font-semibold sm:text-sm' : 'text-[11px] font-medium sm:text-xs'
       } ${
         active
           ? 'bg-emerald-400 text-[#07120d] shadow-lg shadow-emerald-950/20'
@@ -83,10 +100,11 @@ function NavLink({ href, label, active, primary = false }: { href: string; label
   );
 }
 
-function isActive(pathname: string, hash: string, href: string) {
+function isActive(pathname: string, hash: string, href: string, exact = false) {
   const [cleanHref, cleanHash] = href.split('#');
   if (cleanHash) return pathname === cleanHref && hash === `#${cleanHash}`;
   if (pathname === cleanHref && hash) return false;
   if (cleanHref === '/') return pathname === '/';
+  if (exact) return pathname === cleanHref;
   return pathname === cleanHref || pathname.startsWith(`${cleanHref}/`);
 }

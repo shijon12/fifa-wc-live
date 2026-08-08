@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { FavoritesDashboard } from '@/components/FavoritesDashboard';
+import { DataTimestamp } from '@/components/DataTimestamp';
 import { SiteNav } from '@/components/SiteNav';
 import { fetchWorldCupStandings } from '@/lib/liveData';
 import { fetchLeagueStandings, supportedLeagues } from '@/lib/leagueData';
@@ -42,6 +43,7 @@ export default async function FavoritesPage() {
           <h1 className="mt-3 break-words text-4xl font-black tracking-[-0.04em] text-white sm:text-7xl">Favorites & alerts</h1>
           <p className="mt-4 max-w-2xl text-stone-400">Follow World Cup teams and major club teams on this device and receive kickoff, goal, and full-time browser notifications.</p>
         </header>
+        <div className="mt-4"><DataTimestamp updatedAt={new Date()} label="Teams and alert data" /></div>
         <FavoritesDashboard teams={teams} />
       </div>
     </main>

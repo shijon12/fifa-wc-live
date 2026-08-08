@@ -20,9 +20,12 @@ A responsive FIFA World Cup 2026 tracker built with Next.js. It presents near-re
 - Weekly football newsletter subscriptions and optional digest sending
 - Side-by-side team comparison
 - Optional OpenAI match forecasts and team analysis
+- Multi-league AI probability desk with outcome cards and genuine forecast-movement charts
 - Device-local prediction history and accuracy tracking
 - Responsive phone, tablet, and desktop layouts
 - Security headers, input validation, and baseline API rate limiting
+- Conversational fantasy agent backed by an application-owned beam-search optimizer for live player scoring, budgets, current picks, preferences, transfers, captaincy, and rule-valid XIs
+- Membership-gated private-league chat with on-demand refresh and rate-limited posting
 
 ## Technology
 
@@ -38,7 +41,7 @@ A responsive FIFA World Cup 2026 tracker built with Next.js. It presents near-re
 | Hosting | Vercel |
 | Persistence | Browser `localStorage` and `sessionStorage` |
 
-Supabase stores anonymous Web Push subscriptions, notification delivery state, and application user accounts for protected fantasy features.
+Supabase stores anonymous Web Push subscriptions, notification delivery state, application user accounts, fantasy profiles, private leagues, and private-room messages.
 
 ## Quick start
 
@@ -71,7 +74,10 @@ Football data works without environment variables. Leave `OPENAI_API_KEY` empty 
 | --- | --- | --- |
 | `OPENAI_API_KEY` | Only for AI | Server-side OpenAI API key |
 | `OPENAI_MODEL` | No | Model override; defaults to `gpt-5.4-mini` |
-| `AI_ACCESS_CODE` | Required for production AI | A separate shared password that protects paid AI endpoints |
+| `FANTASY_AGENT_MODEL` | No | Fantasy-agent model override; defaults to `gpt-5.6-sol` |
+| `PREDICTION_MODEL` | No | Prediction model override; defaults to `OPENAI_MODEL`, then `gpt-5.6-sol` |
+| `FANTASY_AGENT_DAILY_LIMIT` | No | Signed-in fantasy-agent messages per UTC day; defaults to `20` |
+| `AI_ACCESS_CODE` | For protected comparison AI | A separate shared password retained for the team-comparison endpoint |
 | `AUTH_SECRET` | Required for production auth | Long random value used to sign HTTP-only auth sessions |
 | `SUPABASE_URL` | For push/auth | Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | For push/auth | Server-only database key |
@@ -110,6 +116,7 @@ Run `npm run check` before every deployment.
 | `/favorites` | Favorite teams and notification controls |
 | `/compare` | Team comparison and optional AI analysis |
 | `/predictions` | Saved forecast results and accuracy |
+| `/fantasy` | Fantasy squad, conversational co-manager, match picks, and leaderboard |
 
 ## How “live” data works
 
@@ -154,3 +161,6 @@ This is near-real-time polling, not an official low-latency data stream. Provide
 No open-source license has been added to this repository. Copyright remains with the project owner unless a license is added.
 
 Third-party data, team marks, player images, and trademarks remain the property of their respective owners. Review each provider’s terms before public or commercial distribution.
+Optional Sentry monitoring uses `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN`. Source-map upload can additionally use `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT`. Server-side Supabase operational monitoring remains enabled when Sentry is omitted.
+
+Run a controlled local or production read-load test with `npm run test:load`. Configure `LOAD_TEST_URL`, `LOAD_TEST_CONCURRENCY`, and `LOAD_TEST_REQUESTS`; defaults are localhost, 10 workers, and 30 requests per route.

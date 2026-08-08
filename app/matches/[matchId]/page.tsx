@@ -49,7 +49,7 @@ export default async function MatchPage({ params }: { params: Promise<{ matchId:
         <section className="mt-5 grid gap-3 sm:grid-cols-3">
           <Info label="Competition" value="FIFA World Cup 2026" />
           <Info label="Stage" value={match.group || match.round} />
-          <Info label="Updated" value={formatUpdated(refreshedAt)} />
+          <Info label="Last updated" value={formatUpdated(refreshedAt)} />
         </section>
         <MatchLiveCenter details={details} />
         <PredictionTracker

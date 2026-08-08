@@ -10,7 +10,8 @@ type Mode = 'sign-in' | 'sign-up';
 export function AuthForm({ mode }: { mode: Mode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') || '/account';
+  const requestedNext = searchParams.get('next') || '/account';
+  const next = requestedNext.startsWith('/') && !requestedNext.startsWith('//') ? requestedNext : '/account';
   const [email, setEmail] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');

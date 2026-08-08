@@ -13,9 +13,10 @@ import { isMissingTable, supabaseRest } from '@/lib/supabaseRest';
 
 type FantasyProfileRow = { user_id: string; manager_name: string; updated_at: string };
 type FantasyPickRow = { user_id: string; match_id: string; choice: FantasyPick['choice']; confidence: number };
-type FantasySquadRow = { user_id: string; player_ids: string[]; captain_id: string | null };
+type FantasySquadRow = { user_id: string; player_ids: string[]; starter_ids?: string[]; bench_ids?: string[]; captain_id: string | null; vice_captain_id?: string | null };
 type LeagueRow = { id: string; owner_user_id: string; name: string; join_code: string; is_active: boolean; created_at: string };
 type LeagueMemberRow = { league_id: string; user_id: string; role: 'owner' | 'member'; joined_at: string };
+type LeagueMessageRow = { id: number; league_id: string; user_id: string; display_name: string; body: string; created_at: string };
 
 export type PrivateLeague = {
   id: string;
@@ -32,19 +33,42 @@ export type PrivateLeague = {
   createdAt: string;
 };
 
+export type PrivateLeagueMessage = {
+  id: number;
+  leagueId: string;
+  userId: string;
+  displayName: string;
+  body: string;
+  createdAt: string;
+};
+
+export async function getPrivateLeaguePreview(joinCode: string) {
+  const code = joinCode.trim().toUpperCase();
+  if (!/^[A-Z0-9]{4,12}$/.test(code)) return null;
+  const leagues = await supabaseRest<LeagueRow[]>(`private_leagues?join_code=eq.${encodeURIComponent(code)}&is_active=eq.true&select=*`);
+  const league = leagues[0];
+  if (!league) return null;
+  const members = await supabaseRest<LeagueMemberRow[]>(`private_league_members?league_id=eq.${league.id}&select=*`);
+  const owner = await findUserById(league.owner_user_id).catch(() => null);
+  return { name: league.name, joinCode: league.join_code, members: members.length, ownerName: owner?.displayName ?? 'A Matchroom manager' };
+}
+
 export async function readFantasyProfile(user: AuthUser): Promise<FantasyProfile> {
   try {
     const [profiles, picks, squads] = await Promise.all([
       supabaseRest<FantasyProfileRow[]>(`fantasy_profiles?user_id=eq.${encodeURIComponent(user.id)}&select=*`),
       supabaseRest<FantasyPickRow[]>(`fantasy_picks?user_id=eq.${encodeURIComponent(user.id)}&select=match_id,choice,confidence`),
-      supabaseRest<FantasySquadRow[]>(`fantasy_squads?user_id=eq.${encodeURIComponent(user.id)}&select=player_ids,captain_id`),
+      supabaseRest<FantasySquadRow[]>(`fantasy_squads?user_id=eq.${encodeURIComponent(user.id)}&select=player_ids,starter_ids,bench_ids,captain_id,vice_captain_id`),
     ]);
     return {
       managerName: profiles[0]?.manager_name ?? user.displayName,
       picks: Object.fromEntries(picks.map((pick) => [pick.match_id, { matchId: pick.match_id, choice: pick.choice, confidence: pick.confidence }])),
       squad: {
         playerIds: squads[0]?.player_ids ?? [],
+        starterIds: squads[0]?.starter_ids ?? [],
+        benchIds: squads[0]?.bench_ids ?? [],
         captainId: squads[0]?.captain_id ?? null,
+        viceCaptainId: squads[0]?.vice_captain_id ?? null,
       },
       updatedAt: profiles[0]?.updated_at,
     };
@@ -76,7 +100,10 @@ export async function writeFantasyProfile(user: AuthUser, fantasy: FantasyProfil
       body: JSON.stringify({
         user_id: user.id,
         player_ids: fantasy.squad?.playerIds ?? [],
+        starter_ids: fantasy.squad?.starterIds ?? [],
+        bench_ids: fantasy.squad?.benchIds ?? [],
         captain_id: fantasy.squad?.captainId ?? null,
+        vice_captain_id: fantasy.squad?.viceCaptainId ?? null,
         updated_at: new Date().toISOString(),
       }),
     });
@@ -107,7 +134,13 @@ export async function listFantasyProfilesForLeaderboard() {
         fantasy: {
           managerName: profile.manager_name,
           picks: Object.fromEntries(userPicks.map((pick) => [pick.match_id, { matchId: pick.match_id, choice: pick.choice, confidence: pick.confidence }])),
-          squad: { playerIds: squad?.player_ids ?? [], captainId: squad?.captain_id ?? null },
+          squad: {
+            playerIds: squad?.player_ids ?? [],
+            starterIds: squad?.starter_ids ?? [],
+            benchIds: squad?.bench_ids ?? [],
+            captainId: squad?.captain_id ?? null,
+            viceCaptainId: squad?.vice_captain_id ?? null,
+          },
           updatedAt: profile.updated_at,
         },
       };
@@ -124,6 +157,34 @@ export async function listPrivateLeagueMemberIds(user: AuthUser, leagueId: strin
   if (!requesterMembership.length) throw new Error('You are not a member of this private league.');
   const members = await supabaseRest<LeagueMemberRow[]>(`private_league_members?league_id=eq.${encodeURIComponent(leagueId)}&select=*&order=joined_at.asc`);
   return members.map((member) => member.user_id);
+}
+
+export async function listPrivateLeagueMessages(user: AuthUser, leagueId: string): Promise<PrivateLeagueMessage[]> {
+  await listPrivateLeagueMemberIds(user, leagueId);
+  const rows = await supabaseRest<LeagueMessageRow[]>(`private_league_messages?league_id=eq.${encodeURIComponent(leagueId)}&select=*&order=created_at.desc&limit=100`);
+  return rows.reverse().map(mapLeagueMessage);
+}
+
+export async function createPrivateLeagueMessage(user: AuthUser, leagueId: string, body: string): Promise<PrivateLeagueMessage> {
+  await listPrivateLeagueMemberIds(user, leagueId);
+  const rows = await supabaseRest<LeagueMessageRow[]>('private_league_messages', {
+    method: 'POST',
+    headers: { Prefer: 'return=representation' },
+    body: JSON.stringify({ league_id: leagueId, user_id: user.id, display_name: user.displayName, body }),
+  });
+  if (!rows[0]) throw new Error('Unable to send message.');
+  return mapLeagueMessage(rows[0]);
+}
+
+function mapLeagueMessage(row: LeagueMessageRow): PrivateLeagueMessage {
+  return {
+    id: row.id,
+    leagueId: row.league_id,
+    userId: row.user_id,
+    displayName: row.display_name,
+    body: row.body,
+    createdAt: row.created_at,
+  };
 }
 
 export async function createPrivateLeague(user: AuthUser, name: string): Promise<PrivateLeague> {

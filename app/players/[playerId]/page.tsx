@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { SiteNav } from '@/components/SiteNav';
 import { PlayerImage } from '@/components/PlayerImage';
+import { DataTimestamp } from '@/components/DataTimestamp';
 import { fetchPlayerMatchLog, fetchWorldCupPlayer } from '@/lib/liveData';
 
 export const dynamic = 'force-dynamic';
@@ -36,6 +37,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ playerI
             </div>
           </div>
         </header>
+        <div className="mt-4"><DataTimestamp updatedAt={new Date()} label="Player statistics" /></div>
 
         <section className="mt-5 grid grid-cols-3 gap-3 sm:grid-cols-6">
           <Stat label="Apps" value={player.appearances} />

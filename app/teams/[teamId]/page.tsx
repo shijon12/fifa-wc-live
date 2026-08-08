@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { SiteNav } from '@/components/SiteNav';
 import { FavoriteButton } from '@/components/FavoriteButton';
+import { DataTimestamp } from '@/components/DataTimestamp';
 import { fetchWorldCupMatches, fetchWorldCupStandings, fetchWorldCupTeam } from '@/lib/liveData';
 
 export const dynamic = 'force-dynamic';
@@ -44,6 +45,7 @@ export default async function TeamPage({ params }: { params: Promise<{ teamId: s
             <FavoriteButton team={{ id: team.id, name: team.name, logo: team.badge }} />
           </div>
         </header>
+        <div className="mt-4"><DataTimestamp updatedAt={new Date()} label="Team profile and results" /></div>
 
         <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Fact label="Founded" value={team.formedYear || '—'} />

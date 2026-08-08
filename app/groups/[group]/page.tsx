@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { SiteNav } from '@/components/SiteNav';
+import { DataTimestamp } from '@/components/DataTimestamp';
 import { fetchWorldCupMatches, fetchWorldCupStandings } from '@/lib/liveData';
 
 export const dynamic = 'force-dynamic';
@@ -30,6 +31,7 @@ export default async function GroupPage({ params }: { params: Promise<{ group: s
           <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] text-white sm:text-7xl">Group {groupCode}</h1>
           <p className="mt-4 text-stone-400">Scores and table data refresh automatically every 15 seconds.</p>
         </header>
+        <div className="mt-4"><DataTimestamp updatedAt={new Date()} label={`Group ${groupCode} table and fixtures`} /></div>
 
         <section className="mt-6 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035]">
           <div className="grid gap-3 p-4 md:hidden">

@@ -4,10 +4,18 @@ import { fetchLeagueMatches, getLeagueById, supportedLeagues } from '@/lib/leagu
 
 export const dynamic = 'force-dynamic';
 
-export default async function LeaguesPage({ searchParams }: { searchParams: Promise<{ league?: string }> }) {
+export type LeagueView = 'results' | 'fixtures' | 'live';
+
+export default async function LeaguesPage({ searchParams }: { searchParams: Promise<{ league?: string; view?: string }> }) {
   const params = await searchParams;
   const selectedLeague = getLeagueById(params.league);
-  const matches = await fetchLeagueMatches(selectedLeague);
+  const selectedView: LeagueView = params.view === 'fixtures' || params.view === 'live' ? params.view : 'results';
+  const matchWindow = selectedView === 'fixtures'
+    ? { daysBack: 0, daysForward: 45, limit: 100 }
+    : selectedView === 'live'
+      ? { daysBack: 1, daysForward: 1, limit: 50 }
+      : { daysBack: 14, daysForward: 0, limit: 100 };
+  const matches = await fetchLeagueMatches(selectedLeague, matchWindow);
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#07120d] text-stone-100">
@@ -15,7 +23,7 @@ export default async function LeaguesPage({ searchParams }: { searchParams: Prom
       <div className="relative mx-auto max-w-[1440px] px-4 pb-16 pt-5 sm:px-6 lg:px-10">
         <SiteNav />
         <div className="mt-6">
-          <LeagueHub leagues={supportedLeagues} selectedLeague={selectedLeague} matches={matches} />
+          <LeagueHub leagues={supportedLeagues} selectedLeague={selectedLeague} matches={matches} selectedView={selectedView} refreshedAt={new Date().toISOString()} />
         </div>
       </div>
     </main>

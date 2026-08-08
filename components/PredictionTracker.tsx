@@ -2,14 +2,15 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { ForecastProbabilityChart } from '@/components/ForecastProbabilityChart';
 import { TeamNewsSentiment } from '@/components/TeamNewsSentiment';
 import {
   readPredictions,
+  withPredictionHistory,
   writePredictions,
   type PredictedOutcome,
   type StoredPrediction,
 } from '@/lib/predictionTypes';
-import { useAIAccessCode } from '@/lib/useAIAccessCode';
 
 type MatchSnapshot = {
   id: string;
@@ -25,7 +26,6 @@ export function PredictionTracker({ match }: { match: MatchSnapshot }) {
   const [trackedCount, setTrackedCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { accessCode, setAccessCode } = useAIAccessCode();
 
   useEffect(() => {
     const predictions = readPredictions();
@@ -50,15 +50,16 @@ export function PredictionTracker({ match }: { match: MatchSnapshot }) {
     try {
       const response = await fetch(`/api/predictions/${match.id}`, {
         method: 'POST',
-        headers: accessCode ? { 'x-ai-access-code': accessCode } : undefined,
       });
       const data = (await response.json()) as StoredPrediction & { error?: string };
       if (!response.ok) throw new Error(data.error || 'Prediction request failed.');
 
-      const predictions = readPredictions().filter((entry) => entry.matchId !== match.id);
-      const updated = [data, ...predictions];
+      const predictions = readPredictions();
+      const previous = predictions.find((entry) => entry.matchId === match.id);
+      const next = withPredictionHistory(data, previous);
+      const updated = [next, ...predictions.filter((entry) => entry.matchId !== match.id)];
       writePredictions(updated);
-      setPrediction(data);
+      setPrediction(next);
       setTrackedCount(updated.length);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Prediction request failed.');
@@ -91,10 +92,6 @@ export function PredictionTracker({ match }: { match: MatchSnapshot }) {
           <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-5">
             <p className="font-bold text-white">{match.homeTeam} vs {match.awayTeam}</p>
             <p className="mt-2 text-sm text-stone-500">No forecast has been saved for this match.</p>
-            <label className="mt-4 block max-w-sm">
-              <span className="mb-1 block text-xs uppercase tracking-wider text-stone-500">Shared AI access code</span>
-              <input type="password" value={accessCode} onChange={(event) => setAccessCode(event.target.value)} autoComplete="off" className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-2.5 text-white outline-none focus:border-violet-400/40" placeholder="Optional if AI is enabled" />
-            </label>
             <button
               type="button"
               onClick={generatePrediction}
@@ -140,8 +137,15 @@ function PredictionResult({ prediction }: { prediction: StoredPrediction }) {
           {prediction.factors.map((factor) => <li key={factor}>• {factor}</li>)}
         </ul>
         <p className="mt-4 text-[10px] uppercase tracking-wider text-stone-600">
-          {prediction.model} · {new Date(prediction.generatedAt).toLocaleString()}
+          {prediction.model} · Last updated {new Date(prediction.generatedAt).toLocaleString()}
         </p>
+      </div>
+      <div className="lg:col-span-2">
+        <ForecastProbabilityChart
+          history={prediction.history ?? [{ generatedAt: prediction.generatedAt, homeWinPct: prediction.homeWinPct, drawPct: prediction.drawPct, awayWinPct: prediction.awayWinPct }]}
+          homeTeam={prediction.homeTeam}
+          awayTeam={prediction.awayTeam}
+        />
       </div>
     </div>
   );

@@ -1,15 +1,28 @@
 import { NextResponse } from 'next/server';
+import { unstable_cache } from 'next/cache';
 import { type FantasyPick } from '@/lib/auth';
 import { getCurrentUser } from '@/lib/auth';
 import { listFantasyProfilesForLeaderboard, listPrivateLeagueMemberIds } from '@/lib/fantasyStore';
 import { fetchAllFantasyMatches, scoreFantasyPick } from '@/lib/fantasyScoring';
 import { fetchFantasyPlayerPool, squadPoints } from '@/lib/fantasySquad';
+import { fantasySeasonTotals } from '@/lib/fantasyGameEngine';
 
 export const runtime = 'nodejs';
 
+const cachedLeaderboardRows = unstable_cache(async () => {
+  const [profiles, matches, players, seasonTotals] = await Promise.all([listFantasyProfilesForLeaderboard(), fetchAllFantasyMatches(), fetchFantasyPlayerPool(), fantasySeasonTotals()]);
+  return profiles.map((profile) => {
+    const picks = profile.fantasy.picks ?? {};
+    const score = matches.reduce((total, match) => total + scoreFantasyPick(match, picks[match.id] as FantasyPick | undefined), 0);
+    const historicScore = seasonTotals.get(profile.id);
+    const squadScore = historicScore ?? (profile.fantasy.squad ? squadPoints(players, profile.fantasy.squad) : 0);
+    return { userId: profile.id, managerName: profile.fantasy.managerName || profile.displayName, score, squadScore, totalScore: score + squadScore, picks: Object.keys(picks).length, squadPlayers: profile.fantasy.squad?.playerIds.length ?? 0, updatedAt: profile.fantasy.updatedAt ?? null };
+  }).filter((row) => row.picks > 0 || row.squadPlayers > 0);
+}, ['fantasy-leaderboard-v2'], { revalidate: 30 });
+
 export async function GET(request: Request) {
   const leagueId = new URL(request.url).searchParams.get('leagueId');
-  const [profiles, matches, players] = await Promise.all([listFantasyProfilesForLeaderboard(), fetchAllFantasyMatches(), fetchFantasyPlayerPool()]);
+  const allRows = await cachedLeaderboardRows();
   let allowedUserIds: Set<string> | null = null;
   if (leagueId) {
     const user = await getCurrentUser();
@@ -21,26 +34,10 @@ export async function GET(request: Request) {
     }
   }
 
-  const rows = profiles
-    .filter((profile) => !allowedUserIds || allowedUserIds.has(profile.id))
-    .map((profile) => {
-      const picks = profile.fantasy.picks ?? {};
-      const score = matches.reduce((total, match) => total + scoreFantasyPick(match, picks[match.id] as FantasyPick | undefined), 0);
-      const squadScore = profile.fantasy.squad ? squadPoints(players, profile.fantasy.squad) : 0;
-      return {
-        userId: profile.id,
-        managerName: profile.fantasy.managerName || profile.displayName,
-        score,
-        squadScore,
-        totalScore: score + squadScore,
-        picks: Object.keys(picks).length,
-        squadPlayers: profile.fantasy.squad?.playerIds.length ?? 0,
-        updatedAt: profile.fantasy.updatedAt ?? null,
-      };
-    })
-    .filter((row) => row.picks > 0 || row.squadPlayers > 0)
-    .sort((a, b) => b.totalScore - a.totalScore || b.squadScore - a.squadScore || b.score - a.score || a.managerName.localeCompare(b.managerName))
-    .slice(0, 50);
+  const rows = allRows.filter((row) => !allowedUserIds || allowedUserIds.has(row.userId));
 
-  return NextResponse.json({ leaderboard: rows, scopedToLeague: Boolean(leagueId) });
+  const fantasyLeaderboard = rows.filter((row) => row.squadPlayers > 0).sort((a, b) => b.squadScore - a.squadScore || a.managerName.localeCompare(b.managerName)).slice(0, 50).map((row) => ({ ...row, totalScore: row.squadScore }));
+  const predictionLeaderboard = rows.filter((row) => row.picks > 0).sort((a, b) => b.score - a.score || a.managerName.localeCompare(b.managerName)).slice(0, 50).map((row) => ({ ...row, totalScore: row.score }));
+
+  return NextResponse.json({ leaderboard: fantasyLeaderboard, fantasyLeaderboard, predictionLeaderboard, scopedToLeague: Boolean(leagueId) });
 }

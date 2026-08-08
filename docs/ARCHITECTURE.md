@@ -31,7 +31,17 @@ flowchart LR
     Push --> Browser
 ```
 
-Supabase is used only for anonymous push subscriptions, match-state comparison, event deduplication, and scheduling. There is no user database, message queue, or authentication provider.
+Supabase stores authentication accounts, fantasy profiles, private leagues and memberships, private-room chat messages, push subscriptions, match-state comparison, event deduplication, and scheduled notification state.
+
+The fantasy gameweek engine stores durable manager state, ordered benches, deadline snapshots, transfer ledgers, chip use, scoring breakdowns, and per-gameweek history in Supabase. A Supabase Cron job invokes the protected processor every minute. At a deadline, it snapshots each eligible saved squad and calculates net transfer deductions against the prior snapshot. When the official event is finalized and data-checked, it consumes official FPL live event totals, applies formation-safe substitutions, captaincy and chip multipliers, finalizes the score, and restores Free Hit squads. Official event totals aggregate double gameweeks and leave blank-gameweek players without fixture points.
+
+Every processor run first executes an isolated legal-lineup simulation covering automatic substitutions, captain fallback, transfer deductions, all chips, doubles, and blanks. A failed simulation stops scoring before user records can be changed. Operational events persist for 30 days and power the admin health panel. Provider schema validation rejects incompatible FPL event responses. Season keys isolate manager state, histories, transfers, and chip use across annual FPL rollovers.
+
+Sentry captures uncaught server, edge, and browser exceptions when `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN` are configured. Supabase operational telemetry remains active without Sentry, so scheduled-run and provider health never depend on a third-party monitoring account.
+
+The fantasy squad agent has three separate layers. The OpenAI Responses API translates natural language into bounded tool inputs. `lib/fantasyOptimizer.ts` is the application-owned decision engine: it scores the current player pool by position, reliability, attacking output, discipline, value, current-pick continuity, preferences, and strategy, then uses a bounded beam search to find the highest-scoring valid combination. `lib/fantasyAgentHarness.ts` validates tool inputs and final proposals against formation, budget, captain, duplicate-player, transfer, exclusion, lock, and maximum-three-per-team rules. The language model never chooses unchecked player IDs and cannot persist a squad. The browser shows the exact proposal and only sends it through the existing account-sync flow after explicit approval.
+
+Private-room chat is accessed through authenticated Next.js API routes. Every read and write verifies private-league membership on the server. Messages are limited to 500 characters, escaped by React rendering, rate-limited, and fetched only while a user has the relevant chat open.
 
 ## Rendering model
 
@@ -133,6 +143,23 @@ AI calls are server-side:
 7. The browser saves the result locally.
 
 `OPENAI_API_KEY` never needs to enter client-side JavaScript.
+
+### Prediction desk
+
+The prediction page loads upcoming fixtures only for the league selected in the URL, avoiding requests for every competition at once. A signed-in user can generate a structured forecast through `POST /api/predictions/leagues/:leagueId/:matchId`. The server resolves the fixture against the provider feed, loads the two table rows and recent relevant results, checks the shared persistent daily AI allowance, and sends that bounded context to the Responses API.
+
+Each successful refresh is stored locally as a probability snapshot for that match. `ForecastProbabilityChart` plots only these real snapshots; it does not synthesize historical movement. The first forecast therefore displays a single observation and explains that another refresh is required before movement exists.
+
+### Fantasy agent loop
+
+1. A signed-in user sends a chat message, recent chat context, and the current squad to `POST /api/fantasy/agent`.
+2. The route validates authentication, request size, squad shape, the short-window per-user/IP limit, and the persistent Supabase daily allowance.
+3. The server loads the current fantasy player pool and calls the Responses API with `store: false` and a bounded set of function tools.
+4. The model can inspect the squad, search players, invoke the optimizer with structured user constraints, propose a same-position transfer, set a captain, or propose a custom XI.
+5. The optimizer evaluates current player data and the user's existing picks, while the separate harness validates every proposed write. The model cannot call the account persistence route directly.
+6. A validated action is returned to the browser as a pending proposal. The user must select **Apply proposal** before normal fantasy account synchronization saves it.
+
+The loop is capped at six tool rounds and keeps at most ten prior chat messages in a request to constrain latency and API spend. `fantasy_agent_usage` stores only a user ID, UTC date, and request count; it does not store chat content. The default allowance is 20 agent messages per signed-in user per UTC day.
 
 ## Component responsibilities
 

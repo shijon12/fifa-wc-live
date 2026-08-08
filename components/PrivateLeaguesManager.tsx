@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
+import { PrivateLeagueChat } from '@/components/PrivateLeagueChat';
+import { PrivateLeagueAgent } from '@/components/PrivateLeagueAgent';
 
 type PrivateLeague = {
   id: string;
@@ -35,7 +37,7 @@ export function PrivateLeaguesManager() {
   const [joinCode, setJoinCode] = useState('');
   const [error, setError] = useState('');
   const [copied, setCopied] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<'create' | 'join' | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [leagueLeaderboards, setLeagueLeaderboards] = useState<Record<string, LeaderboardRow[]>>({});
 
@@ -77,7 +79,7 @@ export function PrivateLeaguesManager() {
 
   async function submit(event: FormEvent<HTMLFormElement>, action: 'create' | 'join') {
     event.preventDefault();
-    setLoading(true);
+    setLoading(action);
     setError('');
     try {
       const response = await fetch('/api/fantasy/private-leagues', {
@@ -96,12 +98,12 @@ export function PrivateLeaguesManager() {
     } catch {
       setError('Action failed.');
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
   }
 
   async function shareLeague(league: PrivateLeague) {
-    const url = `${window.location.origin}/fantasy/leagues?join=${encodeURIComponent(league.joinCode)}`;
+    const url = `${window.location.origin}/fantasy/invite/${encodeURIComponent(league.joinCode)}`;
     const text = `Join my Matchroom private league "${league.name}" with code ${league.joinCode}: ${url}`;
     try {
       if (navigator.share) {
@@ -126,7 +128,7 @@ export function PrivateLeaguesManager() {
         </div>
       )}
 
-      <section className="rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.06] p-5">
+      <section className="min-w-0 overflow-hidden rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.06] p-4 sm:p-5">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300">How private leagues work</p>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-emerald-50/75">
           Best used with friends: create a room, invite 3–5 people, and test it during a real matchday.
@@ -145,7 +147,9 @@ export function PrivateLeaguesManager() {
           <h2 className="mt-2 text-2xl font-black text-white">Start a private league</h2>
           <input value={name} onChange={(event) => setName(event.target.value)} placeholder="League name" className="mt-5 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-white outline-none ring-emerald-400/30 focus:ring-4" />
           <p className="mt-3 text-sm leading-6 text-stone-400">Create a group, share one invite link, and turn matchday picks into a social loop.</p>
-          <button disabled={loading || !configured} className="mt-4 w-full rounded-full bg-emerald-400 px-5 py-3 font-black text-[#07120d] disabled:opacity-50 sm:w-auto">Create league</button>
+          <button disabled={loading !== null || !configured} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-400 px-5 py-3 font-black text-[#07120d] disabled:opacity-50 sm:w-auto">
+            {loading === 'create' && <ButtonSpinner />}{loading === 'create' ? 'Creating league' : 'Create league'}
+          </button>
         </form>
 
         <form onSubmit={(event) => submit(event, 'join')} className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
@@ -153,28 +157,30 @@ export function PrivateLeaguesManager() {
           <h2 className="mt-2 text-2xl font-black text-white">Enter a join code</h2>
           <input value={joinCode} onChange={(event) => setJoinCode(event.target.value.toUpperCase())} placeholder="ABCD1234" className="mt-5 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-white outline-none ring-sky-400/30 focus:ring-4" />
           <p className="mt-3 text-sm leading-6 text-stone-400">Paste a friend’s invite code or open their shared link to pre-fill it automatically.</p>
-          <button disabled={loading || !configured} className="mt-4 w-full rounded-full bg-sky-300 px-5 py-3 font-black text-[#07120d] disabled:opacity-50 sm:w-auto">Join league</button>
+          <button disabled={loading !== null || !configured} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-sky-300 px-5 py-3 font-black text-[#07120d] disabled:opacity-50 sm:w-auto">
+            {loading === 'join' && <ButtonSpinner />}{loading === 'join' ? 'Joining league' : 'Join league'}
+          </button>
         </form>
       </section>
 
       {error && <p className="rounded-2xl border border-rose-400/20 bg-rose-400/10 p-4 text-sm text-rose-100">{error}</p>}
 
-      <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
+      <section className="min-w-0 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035] p-4 sm:p-5">
         <h2 className="text-2xl font-black text-white">Your private leagues</h2>
         {initialLoading ? (
           <PrivateLeagueSkeleton />
         ) : (
         <div className="mt-4 space-y-3">
           {leagues.length ? leagues.map((league) => (
-            <div key={league.id} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <div key={league.id} className="min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-black/20 p-3 sm:p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="font-bold text-white">{league.name}</p>
                   <p className="text-sm text-stone-500">{league.members} members · {league.role}</p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-black text-emerald-300">Code {league.joinCode}</span>
-                  <button type="button" onClick={() => shareLeague(league)} className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs font-black text-amber-100 hover:bg-amber-300/20">
+                <div className="grid w-full grid-cols-2 gap-2 min-[480px]:flex min-[480px]:w-auto min-[480px]:flex-wrap">
+                  <span className="truncate rounded-full border border-white/10 px-3 py-2 text-center text-xs font-black text-emerald-300">Code {league.joinCode}</span>
+                  <button type="button" onClick={() => shareLeague(league)} className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-2 text-xs font-black text-amber-100 hover:bg-amber-300/20">
                     {copied === league.id ? 'Copied' : 'Share invite'}
                   </button>
                 </div>
@@ -203,8 +209,14 @@ export function PrivateLeaguesManager() {
                   </Link>
                 </div>
               </div>
-              <MatchroomAssistant league={league} rows={leagueLeaderboards[league.id] ?? []} />
+              <div className="mt-4 rounded-xl border border-emerald-300/20 bg-emerald-300/10 p-3">
+                <div className="flex items-center justify-between gap-3"><p className="text-sm font-bold text-emerald-50">Invite progress</p><span className="text-xs font-black text-emerald-200">{Math.min(league.members, 4)} of 4 friends</span></div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-black/30"><span className="block h-full rounded-full bg-emerald-300" style={{ width: `${Math.min(100, league.members / 4 * 100)}%` }} /></div>
+                <p className="mt-2 text-xs text-emerald-100/70">{league.members < 4 ? `Invite ${4 - league.members} more ${4 - league.members === 1 ? 'friend' : 'friends'} to make the room competitive.` : 'Your room has enough managers for a lively matchday.'}</p>
+              </div>
+              <PrivateLeagueAgent leagueId={league.id} leagueName={league.name} />
               <RoomLeaderboard rows={leagueLeaderboards[league.id] ?? []} memberCount={league.members} />
+              <PrivateLeagueChat leagueId={league.id} leagueName={league.name} />
             </div>
           )) : (
             <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-5">
@@ -227,6 +239,10 @@ function PrivateLeagueSkeleton() {
       ))}
     </div>
   );
+}
+
+function ButtonSpinner() {
+  return <span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />;
 }
 
 function MatchroomAssistant({ league, rows }: { league: PrivateLeague; rows: LeaderboardRow[] }) {

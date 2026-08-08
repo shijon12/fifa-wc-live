@@ -9,7 +9,8 @@ const providers = [
 
 export function OAuthButtons() {
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') || '/account';
+  const requestedNext = searchParams.get('next') || '/account';
+  const next = requestedNext.startsWith('/') && !requestedNext.startsWith('//') ? requestedNext : '/account';
 
   return (
     <div className="mt-5 space-y-2">

@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import crypto from 'node:crypto';
+import type { FantasySquad } from '@/lib/fantasySquad';
 
 const SESSION_COOKIE = 'fifa_wc_session';
 const SESSION_TTL_SECONDS = 60 * 20;
@@ -20,10 +21,7 @@ export type FantasyPick = {
 export type FantasyProfile = {
   managerName: string;
   picks: Record<string, FantasyPick>;
-  squad?: {
-    playerIds: string[];
-    captainId: string | null;
-  };
+  squad?: FantasySquad;
   updatedAt?: string;
 };
 

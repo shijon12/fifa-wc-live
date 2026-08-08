@@ -34,7 +34,7 @@ export function DataSourceHealth({ items, refreshedAt }: { items: HealthItem[]; 
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300">Data source health</p>
           <h2 className="mt-2 text-xl font-black text-white">What is fresh, derived, or provider-limited</h2>
         </div>
-        <p className="text-xs font-semibold text-stone-500">Checked {formatHealthTime(refreshedAt)}</p>
+        <p className="text-xs font-semibold text-stone-500">Last updated {formatHealthTime(refreshedAt)}</p>
       </div>
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {items.map((item) => (

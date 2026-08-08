@@ -44,7 +44,7 @@ export function NewsletterSignup({ compact = false }: { compact?: boolean }) {
       <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-300">Weekly newsletter</p>
       <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">Football without the tab chaos.</h2>
       <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-400">
-        Get a weekly Matchroom digest with the biggest football stories, recent results, upcoming fixtures, and product updates for matchday rooms.
+        One email every Friday with the biggest football stories, recent results, upcoming fixtures, and Matchroom product updates.
       </p>
       <form onSubmit={submit} className="mt-5 grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto]">
         <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required placeholder="Email address" className="rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-white outline-none ring-emerald-400/30 placeholder:text-stone-600 focus:ring-4" />
@@ -59,7 +59,7 @@ export function NewsletterSignup({ compact = false }: { compact?: boolean }) {
           {message}
         </p>
       )}
-      <p className="mt-3 text-xs leading-5 text-stone-500">No spam. This is for weekly football notes and Matchroom product updates.</p>
+      <p className="mt-3 text-xs leading-5 text-stone-500">By joining, you agree to receive the weekly digest. Every email identifies The Matchroom and includes a one-click unsubscribe link. We do not sell your address.</p>
     </section>
   );
 }

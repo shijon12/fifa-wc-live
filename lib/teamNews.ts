@@ -91,9 +91,13 @@ export async function fetchTeamNews(team: string): Promise<TeamNewsResult> {
 
 export async function fetchRecentFootballNews(): Promise<TeamNewsItem[]> {
   const paid = await fetchConfiguredNewsProvider('football');
-  if (paid?.items.length) return paid.items.slice(0, 6);
+  if (paid?.items.length) return paid.items.filter(isAssociationFootballNews).slice(0, 6);
 
-  const query = encodeURIComponent('football OR soccer when:30d');
+  // In US-localized feeds, a bare "football" query is dominated by NFL and
+  // college-football coverage. Ask for association-football competitions and
+  // still enforce a defensive title filter below because providers can ignore
+  // or loosely interpret search operators.
+  const query = encodeURIComponent('(soccer OR FIFA OR UEFA OR "Premier League" OR "Champions League" OR "La Liga" OR Bundesliga OR "Serie A") when:30d -NFL -NCAA -"college football"');
   const response = await fetch(`${GOOGLE_NEWS_RSS}?q=${query}&hl=en-US&gl=US&ceid=US:en`, {
     next: { revalidate: 60 * 30 },
     headers: { Accept: 'application/rss+xml, text/xml' },
@@ -103,9 +107,28 @@ export async function fetchRecentFootballNews(): Promise<TeamNewsItem[]> {
   const xml = await response.text();
   return sortLatest(dedupeNews(parseRssItems(xml))
     .filter((item) => isRecent(item.publishedAt, 30))
-    .filter((item) => credibleSource(item.source)))
+    .filter((item) => credibleSource(item.source))
+    .filter(isAssociationFootballNews))
     .slice(0, 6)
     .map((item) => ({ ...item, sentiment: scoreSentiment(item.title) }));
+}
+
+const AMERICAN_FOOTBALL_TERMS = [
+  /\bnfl\b/i,
+  /\bncaa\b/i,
+  /college football/i,
+  /pro football hall of fame/i,
+  /\bsuper bowl\b/i,
+  /\bquarterback\b/i,
+  /\bwide receiver\b/i,
+  /\brunning back\b/i,
+  /\btouchdown(s)?\b/i,
+  /\bnfl draft\b/i,
+  /\bgridiron\b/i,
+];
+
+function isAssociationFootballNews(item: TeamNewsItem) {
+  return !AMERICAN_FOOTBALL_TERMS.some((pattern) => pattern.test(item.title));
 }
 
 async function fetchConfiguredNewsProvider(team: string): Promise<TeamNewsResult | null> {

@@ -25,7 +25,7 @@ export function MatchDayCenter({
 
       {refreshedAt && (
         <p className="mb-4 rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-stone-500 sm:inline-flex sm:text-xs">
-          Updated {formatUpdated(refreshedAt)}
+          Last updated {formatUpdated(refreshedAt)}
         </p>
       )}
 

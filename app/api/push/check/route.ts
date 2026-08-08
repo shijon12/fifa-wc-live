@@ -11,6 +11,7 @@ import {
   pushConfiguration,
   saveMatchStates,
 } from '@/lib/pushNotifications';
+import { recordFailure, recordOperation } from '@/lib/operations';
 
 export const maxDuration = 60;
 
@@ -21,6 +22,7 @@ export async function POST(request: Request) {
   if (!pushConfiguration().configured) {
     return NextResponse.json({ error: 'Push notifications are not configured.' }, { status: 503 });
   }
+  const startedAt = Date.now();
   try {
     const alertLeagues = supportedLeagues.filter((league) =>
       ['champions-league', 'premier-league', 'laliga', 'serie-a', 'bundesliga', 'ligue-1', 'mls'].includes(league.id),
@@ -44,6 +46,7 @@ export async function POST(request: Request) {
     let claimed = 0;
     let delivered = 0;
     let removed = 0;
+    let failed = 0;
     for (const event of candidates) {
       if (!(await claimPushEvent(event))) continue;
       claimed += 1;
@@ -53,17 +56,22 @@ export async function POST(request: Request) {
       const result = await deliverPushEvent(event, interested);
       delivered += result.delivered;
       removed += result.removed;
+      failed += result.failed;
     }
-    return NextResponse.json({
+    const result = {
       checkedMatches: matches.length,
       subscriptions: subscriptions.length,
       detectedEvents: candidates.length,
       claimedEvents: claimed,
       delivered,
       removed,
-    });
+      failed,
+    };
+    await recordOperation({ service: 'notifications', operation: 'process', status: failed ? 'warning' : 'success', duration_ms: Date.now() - startedAt, message: failed ? `${failed} push deliveries failed.` : 'Notification processing completed.', metadata: result });
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Push notification check failed', error);
+    await recordFailure('notifications', 'process', error, startedAt);
     return NextResponse.json({ error: 'Push notification check failed.' }, { status: 500 });
   }
 }

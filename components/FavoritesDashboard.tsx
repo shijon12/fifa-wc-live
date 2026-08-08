@@ -15,11 +15,13 @@ export function FavoritesDashboard({ teams }: { teams: FavoriteTeam[] }) {
   const [favorites, setFavorites] = useState<FavoriteTeam[]>([]);
   const [notificationStatus, setNotificationStatus] = useState<PushNotificationStatus>('checking');
   const [notificationError, setNotificationError] = useState<string | null>(null);
+  const [deviceHelp, setDeviceHelp] = useState('Allow notifications in this browser and keep OS notifications enabled.');
 
   useEffect(() => {
     const update = () => setFavorites(readFavorites());
     const initialize = window.setTimeout(() => {
       update();
+      setDeviceHelp(notificationDeviceHelp());
       currentPushStatus().then(setNotificationStatus).catch(() => setNotificationStatus('error'));
     }, 0);
     window.addEventListener('favorites-updated', update);
@@ -78,6 +80,8 @@ export function FavoritesDashboard({ teams }: { teams: FavoriteTeam[] }) {
           <p className="mt-1 text-sm leading-6 text-sky-100/80">
             Alerts are optional and depend on browser permission, device support, and OS notification settings. Delivery can vary by browser, especially on mobile.
           </p>
+          <p className="mt-2 text-xs leading-5 text-sky-100/70">Device guidance: {deviceHelp}</p>
+          <p className="mt-2 text-xs font-bold text-sky-100">Current status: {notificationLabel(notificationStatus)}.</p>
         </div>
         {notificationError && <p role="alert" className="mt-4 rounded-xl border border-rose-400/20 bg-rose-400/10 p-3 text-sm text-rose-200">{notificationError}</p>}
         {notificationStatus === 'blocked' && (
@@ -115,6 +119,16 @@ export function FavoritesDashboard({ teams }: { teams: FavoriteTeam[] }) {
       </section>
     </>
   );
+}
+
+function notificationDeviceHelp() {
+  const ua = navigator.userAgent;
+  const ios = /iPhone|iPad|iPod/i.test(ua);
+  const safari = /Safari/i.test(ua) && !/Chrome|CriOS|Edg/i.test(ua);
+  if (ios) return 'On iPhone or iPad, add The Matchroom to your Home Screen, open it from there, then enable alerts. Focus modes and Low Power Mode can delay delivery.';
+  if (safari) return 'In Safari, allow notifications in Website Settings and confirm macOS notifications are enabled for Safari.';
+  if (/Android/i.test(ua)) return 'On Android, allow site notifications and exclude the browser from aggressive battery restrictions if alerts arrive late.';
+  return 'Allow notifications in site settings and confirm Windows or macOS notifications are enabled for this browser.';
 }
 
 function notificationLabel(status: PushNotificationStatus) {

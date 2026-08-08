@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser, type FantasyProfile } from '@/lib/auth';
 import { readFantasyProfile, writeFantasyProfile } from '@/lib/fantasyStore';
 import { clientIdentifier, rateLimit } from '@/lib/security';
+import { prepareSquadSave } from '@/lib/fantasyGameEngine';
 
 export const runtime = 'nodejs';
 
@@ -28,9 +29,19 @@ export async function PUT(request: Request) {
   );
   const rawSquad = input.squad;
   const uniquePlayerIds = Array.from(new Set((rawSquad?.playerIds ?? []).map((id) => String(id).slice(0, 80)))).slice(0, 15);
-  const captainId = rawSquad?.captainId && uniquePlayerIds.includes(rawSquad.captainId) ? rawSquad.captainId : uniquePlayerIds[0] ?? null;
+  const starterIds = Array.from(new Set((rawSquad?.starterIds ?? []).map((id) => String(id).slice(0, 80))))
+    .filter((id) => uniquePlayerIds.includes(id)).slice(0, 11);
+  const captainId = rawSquad?.captainId && starterIds.includes(rawSquad.captainId) ? rawSquad.captainId : starterIds[0] ?? null;
+  const viceCaptainId = rawSquad?.viceCaptainId && starterIds.includes(rawSquad.viceCaptainId) && rawSquad.viceCaptainId !== captainId
+    ? rawSquad.viceCaptainId
+    : starterIds.find((id) => id !== captainId) ?? null;
+  const remainingBench = uniquePlayerIds.filter((id) => !starterIds.includes(id));
+  const benchIds = Array.from(new Set((rawSquad?.benchIds ?? remainingBench).map((id) => String(id).slice(0, 80)))).filter((id) => remainingBench.includes(id));
+  remainingBench.forEach((id) => { if (!benchIds.includes(id)) benchIds.push(id); });
 
-  const fantasy = { managerName, picks, squad: { playerIds: uniquePlayerIds, captainId } };
+  const fantasy = { managerName, picks, squad: { playerIds: uniquePlayerIds, starterIds, benchIds: benchIds.slice(0, 4), captainId, viceCaptainId } };
+  const previous = await readFantasyProfile(user);
+  await prepareSquadSave(user.id, previous.squad ?? { playerIds: [], starterIds: [], benchIds: [], captainId: null, viceCaptainId: null }, fantasy.squad);
   await writeFantasyProfile(user, fantasy);
   return NextResponse.json({ fantasy });
 }

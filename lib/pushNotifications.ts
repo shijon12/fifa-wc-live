@@ -145,6 +145,7 @@ export async function deliverPushEvent(event: PushEvent, subscriptions: StoredPu
   });
   let delivered = 0;
   let removed = 0;
+  let failed = 0;
   for (let index = 0; index < subscriptions.length; index += 20) {
     const batch = subscriptions.slice(index, index + 20);
     await Promise.all(batch.map(async (stored) => {
@@ -165,10 +166,11 @@ export async function deliverPushEvent(event: PushEvent, subscriptions: StoredPu
           return;
         }
         console.error('Push delivery failed', { statusCode, endpoint: stored.endpoint.slice(0, 80) });
+        failed += 1;
       }
     }));
   }
-  return { delivered, removed };
+  return { delivered, removed, failed };
 }
 
 export function detectPushEvents(matches: NotificationMatch[], previous: Map<string, StoredMatchState>) {
