@@ -20,6 +20,7 @@ const checks = [
   ['Secondary navigation is grouped under More', files.nav.includes('function MoreMenu') && files.nav.includes('<summary')],
   ['Gameweek panel clips visual overflow', files.gameweek.includes('min-w-0 overflow-hidden')],
   ['Private league cards constrain overflow', files.leagues.includes('min-w-0 overflow-hidden rounded-2xl')],
+  ['Private leaderboards refresh while visible', files.leagues.includes('refreshVisibleLeaderboards') && files.leagues.includes('10_000') && files.leagues.includes("cache: 'no-store'")],
   ['Private chat header stacks on phones', files.chat.includes('flex-col items-stretch')],
   ['Private agent header stacks on phones', files.agent.includes('flex-col items-stretch')],
 ];

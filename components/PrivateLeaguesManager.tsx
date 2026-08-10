@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { PrivateLeagueChat } from '@/components/PrivateLeagueChat';
 import { PrivateLeagueAgent } from '@/components/PrivateLeagueAgent';
 
@@ -41,32 +41,36 @@ export function PrivateLeaguesManager() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [leagueLeaderboards, setLeagueLeaderboards] = useState<Record<string, LeaderboardRow[]>>({});
 
-  async function load() {
+  const refreshLeaderboards = useCallback(async (nextLeagues: PrivateLeague[]) => {
+    if (!nextLeagues.length) {
+      setLeagueLeaderboards({});
+      return;
+    }
+    const entries = await Promise.all(nextLeagues.map(async (league) => {
+      try {
+        const leaderboardResponse = await fetch(`/api/fantasy/leaderboard?leagueId=${encodeURIComponent(league.id)}`, { cache: 'no-store' });
+        if (!leaderboardResponse.ok) return [league.id, []] as const;
+        const leaderboardData = await leaderboardResponse.json() as { leaderboard?: LeaderboardRow[] };
+        return [league.id, leaderboardData.leaderboard ?? []] as const;
+      } catch {
+        return [league.id, []] as const;
+      }
+    }));
+    setLeagueLeaderboards(Object.fromEntries(entries));
+  }, []);
+
+  const load = useCallback(async () => {
     try {
-      const response = await fetch('/api/fantasy/private-leagues');
+      const response = await fetch('/api/fantasy/private-leagues', { cache: 'no-store' });
       const data = await response.json() as { leagues?: PrivateLeague[]; configured?: boolean };
       const nextLeagues = data.leagues ?? [];
       setLeagues(nextLeagues);
       setConfigured(data.configured !== false);
-      if (nextLeagues.length) {
-        const entries = await Promise.all(nextLeagues.map(async (league) => {
-          try {
-            const leaderboardResponse = await fetch(`/api/fantasy/leaderboard?leagueId=${encodeURIComponent(league.id)}`);
-            if (!leaderboardResponse.ok) return [league.id, []] as const;
-            const leaderboardData = await leaderboardResponse.json() as { leaderboard?: LeaderboardRow[] };
-            return [league.id, leaderboardData.leaderboard ?? []] as const;
-          } catch {
-            return [league.id, []] as const;
-          }
-        }));
-        setLeagueLeaderboards(Object.fromEntries(entries));
-      } else {
-        setLeagueLeaderboards({});
-      }
+      await refreshLeaderboards(nextLeagues);
     } finally {
       setInitialLoading(false);
     }
-  }
+  }, [refreshLeaderboards]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -75,7 +79,22 @@ export function PrivateLeaguesManager() {
       load();
     }, 0);
     return () => window.clearTimeout(timeout);
-  }, []);
+  }, [load]);
+
+  useEffect(() => {
+    if (!leagues.length) return;
+    const refreshVisibleLeaderboards = () => {
+      if (document.visibilityState === 'visible') void refreshLeaderboards(leagues);
+    };
+    const interval = window.setInterval(refreshVisibleLeaderboards, 10_000);
+    window.addEventListener('focus', refreshVisibleLeaderboards);
+    document.addEventListener('visibilitychange', refreshVisibleLeaderboards);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refreshVisibleLeaderboards);
+      document.removeEventListener('visibilitychange', refreshVisibleLeaderboards);
+    };
+  }, [leagues, refreshLeaderboards]);
 
   async function submit(event: FormEvent<HTMLFormElement>, action: 'create' | 'join') {
     event.preventDefault();

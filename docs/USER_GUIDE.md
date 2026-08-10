@@ -135,6 +135,8 @@ Refreshing a forecast creates another timestamped probability snapshot. The move
 
 The navigation keeps Fantasy, private Rooms, and Matches visible as the primary journey. Statistics, predictions, followed teams, comparison, account, and informational pages remain available from the compact More menu. Wide tables and the bracket scroll inside their own panels without widening the entire page.
 
+Private-room leaderboards read newly saved squads immediately and refresh every 10 seconds while the room page is visible. Returning to the tab or focusing the window also refreshes the table.
+
 If an older mobile layout is cached after a deployment, close and reopen the tab or perform a hard refresh.
 # Fantasy virtual agent
 
